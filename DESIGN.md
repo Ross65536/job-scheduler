@@ -91,9 +91,11 @@ when the process is stopped or finished normally.
 
   This is used by the CLI to display the list of jobs.
 
-  The results are not simply a list of IDs because the show status endpoint also returns
-  `stdout` which in some cases can be very large, which can be too heavy for the client for
-  simply listing the jobs. 
+  This endpoint could instead be designed to return a list of of job IDs (and nothing else) 
+  which the client would then have to query the backend with each ID using the show status 
+  endpoint. Because the `stdout` field in some cases can be very large this is not optimal 
+  simply for displaying the list of jobs and some minimal information which is what returned 
+  here.
 
 - Show Status: `GET /api/jobs/:id`
 
