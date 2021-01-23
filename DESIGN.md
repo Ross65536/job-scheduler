@@ -139,7 +139,7 @@ when the process is stopped or finished normally.
   The signal is only sent when the job has `RUNNING` status. 
   Given that a job might hang it could be possible to add a param to specify wheter to use `SIGKILL`.
 
-  There is a delay from the backend collecting the child job's PID and the backend writting 
+  There is a delay from the backend collecting the child job's PID and the backend writing 
   to the DB that the job is no longer `RUNNING`. 
   In this time window another process might have started which could reuse the waited job's PID, 
   and a user could try to stop the already waited job which will cause the new job which has 
