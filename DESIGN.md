@@ -22,11 +22,11 @@ The SQL database will keep track of started jobs and their results.
 
 Table `jobs`:
 
-| id | external_id | pid | status | stdout | stderr | exit_code | created_at | stopped_at |
-| -- | ----------- | --- | ------ | ------ | ------ | --------- | ---------- | ------- |
-| int | int or string | int | enum (int) | string | string | int | datetime | datetime
+| id | external_id | pid | command | status | stdout | stderr | exit_code | created_at | stopped_at |
+| -- | ----------- | --- | ------- | ------ | ------ | ------ | --------- | ---------- | ------- |
+| int | int or string | int | stirng |  enum (int) | string | string | int | datetime | datetime
 |     | NOT NULL, UNIQUE | NOT NULL, INDEXED | |||| NOT NULL, INDEXED | INDEXED
-| internal to DB | ID exposed to the client | Unix process ID | status of job | process stdout | process stderr | process exit code | time zwhen job started | time when job killed or finished
+| internal to DB | ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time zwhen job started | time when job killed or finished
 
 The DB will only contain values for `exit_code`, `stopped_at`, `stdout`, `stderr` 
 when the process is stopped or finished normally.
@@ -52,6 +52,7 @@ when the process is stopped or finished normally.
       "id": "123", // ID which can be used to query status or stop job, it's an internally generated ID
       "status": "RUNNING",
       "created_at": "2020-01-01T12:01Z", // ISO8601 format
+      "command": "ls -l /"
     }
     ```
 
@@ -81,6 +82,7 @@ when the process is stopped or finished normally.
       {
         "id": "123",
         "status": "RUNNING" | "STOPPED" | "KILLED",
+        "command": "ls -l /",
         "created_at": "2020-01-01T12:01Z", // ISO8601 format
         "stopped_at": "2020-02-01T12:01Z", // present if not RUNNING, ISO8601 format
       },
@@ -103,13 +105,15 @@ when the process is stopped or finished normally.
     // if newly created
     {
       "status": "RUNNING",
-      "created_at": "2020-01-01T12:01Z"
+      "created_at": "2020-01-01T12:01Z",
+      "command": "ls -l /"
     }
 
     // if stopped or the job finished normally
     {
       "status": "KILLED" | "FINISHED",
       "exit_code": 123,
+      "command": "ls -l /",
       "stdout": "...",
       "stderr": "...",
       "created_at": "2020-01-01T12:01Z",
@@ -168,18 +172,18 @@ The arguments are sent as is to the backend.
 - Listing jobs
 ```shellscript
 $ jobs-manager -c 127.0.0.1:8080 list
-ID | STATUS | CREATED AT | STOPPED AT
-1 | RUNNING | 2020-01-01T12:01Z | -
-2 | KILLED | 2020-01-01T12:01Z | 2020-01-02T12:01Z
+ID | STATUS | COMMAND | CREATED AT | STOPPED AT
+1 | RUNNING | ls -l / | 2020-01-01T12:01Z | -
+2 | KILLED | task 123 | 2020-01-01T12:01Z | 2020-01-02T12:01Z
 ```
 
 - Job details
 ```shellscript
 $ jobs-manager -c 127.0.0.1:8080 show 1
-RUNNING, created: 2020-01-01T12:01Z
+ls -l /, RUNNING, created: 2020-01-01T12:01Z
 
 $ jobs-manager -c 127.0.0.1:8080 show 2
-KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
+task 123, KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
 
 STDOUT:
 line 1
