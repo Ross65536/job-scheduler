@@ -153,13 +153,13 @@ The backend can return errors like 404, 409, these can have a body describing th
 
 ## CLI Client
 
-The client is a simple stateless, user-friendly, 1-to-1 mapping to the backend API.
+The client is a simple, user-friendly, 1-to-1 mapping to the backend API.
 
 Example usage:
 
 - Start job
 ```shellscript
-$ jobs-manager start ls -l /
+$ jobs-manager -c 127.0.0.1:8080 start ls -l /
 1 # the ID
 ```
 
@@ -167,7 +167,7 @@ The arguments are sent as is to the backend.
 
 - Listing jobs
 ```shellscript
-$ jobs-manager list
+$ jobs-manager -c 127.0.0.1:8080 list
 ID | STATUS | CREATED AT | STOPPED AT
 1 | RUNNING | 2020-01-01T12:01Z | -
 2 | KILLED | 2020-01-01T12:01Z | 2020-01-02T12:01Z
@@ -175,10 +175,10 @@ ID | STATUS | CREATED AT | STOPPED AT
 
 - Job details
 ```shellscript
-$ jobs-manager show 1
+$ jobs-manager -c 127.0.0.1:8080 show 1
 RUNNING, created: 2020-01-01T12:01Z
 
-$ jobs-manager show 2
+$ jobs-manager -c 127.0.0.1:8080 show 2
 KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
 
 STDOUT:
@@ -193,9 +193,11 @@ line 2
 - Stopping Job
 
 ```shellscript
-$ jobs-manager stop 1
+$ jobs-manager -c 127.0.0.1:8080 stop 1
 OK
 ```
+
+The `-c` flag specifies the server location. This could be cached between command executions to simplify the interface
 
 If the backend returns error messages these can be additionally displayed to the user, 
 otherwise the HTTP error codes are translated to a human friendly erorr message (on stderr).
