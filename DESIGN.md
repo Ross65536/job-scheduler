@@ -204,7 +204,7 @@ OK
 The `-c` flag specifies the server location. This could be cached between command executions to simplify the interface
 
 If the backend returns error messages these can be additionally displayed to the user, 
-otherwise the HTTP error codes are translated to a human friendly erorr message (on stderr).
+otherwise the HTTP error codes are translated to a human friendly error message (on stderr).
 
 ## AUTH
 
