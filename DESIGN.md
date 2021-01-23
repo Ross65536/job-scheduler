@@ -63,7 +63,7 @@ when the process is stopped or finished normally.
 
   The backend spawns a thread/goroutine to create the process using `exec` with the 
   arguments as specified in the request body, and `wait`s on it's termination. 
-  The stdout and stderr are overriden with pipes to be able to return them to the client. 
+  The stdout and stderr are overridden with pipes to be able to return them to the client. 
   When a job is created the job status is added to the DB with `RUNNING` status and the ID 
   is returned to the client. 
   When the job is finished normally (with exit 0 or otherwise) the DB is updated 
