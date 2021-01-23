@@ -24,9 +24,9 @@ Table `jobs`:
 
 | id | external_id | pid | command | status | stdout | stderr | exit_code | created_at | stopped_at |
 | -- | ----------- | --- | ------- | ------ | ------ | ------ | --------- | ---------- | ------- |
-| int | int or string | int | stirng |  enum (int) | string | string | int | datetime | datetime
+| int | int or string | int | string |  enum (int) | string | string | int | datetime | datetime
 |     | NOT NULL, UNIQUE | NOT NULL, INDEXED | |||| NOT NULL, INDEXED | INDEXED
-| internal to DB | ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time zwhen job started | time when job killed or finished
+| internal to DB | ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time when job started | time when job is killed or has finished
 
 The DB will only contain values for `exit_code`, `stopped_at`, `stdout`, `stderr` 
 when the process is stopped or finished normally.
@@ -67,7 +67,7 @@ when the process is stopped or finished normally.
   When a job is created the job status is added to the DB with `RUNNING` status and the ID 
   is returned to the client. 
   When the job is finished normally (with exit 0 or otherwise) the DB is updated 
-  with `FINIHSED` status and the `stdout`, `stderr` and `exit_code` results are 
+  with `FINISHED` status and the `stdout`, `stderr` and `exit_code` results are 
   written to the DB, but when a job is stopped by the user the status is set as `KILLED`.
 
   There is a danger here that a user can execute a malicious job (like `rm -rf /`) which will be ignored.
@@ -134,7 +134,7 @@ when the process is stopped or finished normally.
 
   - 409: when there might be a race condition
 
-  The backend will send a SIGINT signal to the child to stop. 
+  The backend will send a `SIGINT` signal to the child to stop. 
   The user must then query using the show status to see when it is actually stopped. 
   The signal is only sent when the job has `RUNNING` status. 
   Given that a job might hang it could be possible to add a param to specify whether to use `SIGKILL`.
