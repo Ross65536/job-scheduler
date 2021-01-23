@@ -26,7 +26,10 @@ Table `jobs`:
 | -- | ----------- | --- | ------ | ------ | ------ | --------- | ---------- | ------- |
 | int | int or string | int | enum (int) | string | string | int | datetime | datetime
 |     | NOT NULL, UNIQUE | NOT NULL, INDEXED | |||| NOT NULL, INDEXED | INDEXED
-| internal to DB | ID exposed to the client | Unix process ID | status of job (can be one of `RUNNING`, `KILLED` or `FINISHED`) | process stdout | process stderr | process exit code when status `KILLED` or `FINISHED` | time when job started | time when job killed or finished
+| internal to DB | ID exposed to the client | Unix process ID | status of job | process stdout | process stderr | process exit code | time zwhen job started | time when job killed or finished
+
+The DB will only contain values for `exit_code`, `stopped_at`, `stdout`, `stderr` 
+when the process is stopped or finished normally.
 
 
 ### RESTfull API
@@ -34,7 +37,7 @@ Table `jobs`:
 - Start job: `POST /api/jobs`
 
   Example body:
-  ```
+  ```javascript
   {
     "program": "ls", // String, path of the process
     "args": ["-l", "./code"] // [String], arguments to start process with
@@ -44,7 +47,7 @@ Table `jobs`:
   Possible HTTP Responses:
 
   - 201: When job succesfully created
-    ```
+    ```javascript
     {
       "id": "123", // ID which can be used to query status or stop job, it's an internally generated ID
       "status": "RUNNING",
@@ -73,7 +76,7 @@ Table `jobs`:
   Possible HTTP Response:
 
   - 200:
-    ```
+    ```javascript
     [
       {
         "id": "123",
@@ -98,7 +101,7 @@ Table `jobs`:
   Possible HTTP Responses:
   
   - 200:
-    ```
+    ```javascript
     // if newly created
     {
       "status": "RUNNING",
@@ -148,7 +151,7 @@ Table `jobs`:
   PPID different from the backend in which case the signal isn't sent and the backend returns 409.
 
 The backend can return errors like 404, 409, these can have a body describing the error with the format:
-```
+```javascript
 {
   "message": "Something went wrong" // optional
 }
@@ -161,7 +164,7 @@ The client is a simple stateless, user-friendly, mapping to the backend.
 Example usage:
 
 - Start job
-```shell
+```shellscript
 $ jobs-manager start ls -l /
 1 # the ID
 ```
