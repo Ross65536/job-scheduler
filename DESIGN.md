@@ -46,7 +46,7 @@ when the process is stopped or finished normally.
 
   Possible HTTP Responses:
 
-  - 201: When job succesfully created
+  - 201: When job has been successfully created
     ```javascript
     {
       "id": "123", // ID which can be used to query status or stop job, it's an internally generated ID
