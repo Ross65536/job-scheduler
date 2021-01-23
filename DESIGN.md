@@ -39,8 +39,7 @@ when the process is stopped or finished normally.
   Example body:
   ```javascript
   {
-    "program": "ls", // String, path of the process
-    "args": ["-l", "./code"] // [String], arguments to start process with
+    "command": ["ls", "-l", "./code"] // [String], command and arguments to start process with
   }
   ```
 
