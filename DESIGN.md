@@ -1,6 +1,6 @@
 # Design
 
-The complete solution consists of a backend server serving a RESTfull HTTP+JSON interface and a CLI client that connect to this server. 
+The complete solution consists of a backend server serving a RESTfull HTTP+JSON interface and a CLI client that connects to this server. 
 
 It is assumed that there is only 1 user using the backend.
 
@@ -20,12 +20,11 @@ The SQL database will keep track of started jobs and their results.
 
 Table `jobs`:
 
-| id | external_id | pid | status | stdout | stderr | exit_code | created_at | done_at |
+| id | external_id | pid | status | stdout | stderr | exit_code | created_at | stopped_at |
 | -- | ----------- | --- | ------ | ------ | ------ | --------- | ---------- | ------- |
 | int | int or string | int | enum (int) | string | string | int | datetime | datetime
 |     | NOT NULL, UNIQUE | NOT NULL, INDEXED | |||| NOT NULL, INDEXED | INDEXED
 | internal to DB | ID exposed to the client | Unix process ID | status of job (can be one of `RUNNING`, `KILLED` or `FINISHED`) | process stdout | process stderr | process exit code when status `KILLED` or `FINISHED` | time when job started | time when job killed or finished
-
 
 
 ### RESTfull API
@@ -52,7 +51,7 @@ Table `jobs`:
     ```
 
   - 401: Unauthorized
-  
+
   - 400: when failed to create job
 
 
@@ -71,7 +70,7 @@ Table `jobs`:
         "id": "123",
         "status": "RUNNING" | "STOPPED" | "KILLED",
         "created_at": "2020-01-01T12:01Z", // ISO8601 format
-        "done_at": "2020-02-01T12:01Z", // present if not RUNNING, ISO8601 format
+        "stopped_at": "2020-02-01T12:01Z", // present if not RUNNING, ISO8601 format
       },
       ...
     ]
@@ -102,7 +101,7 @@ Table `jobs`:
       "stdout": "...",
       "stderr": "...",
       "created_at": "2020-01-01T12:01Z",
-      "done_at": "2020-02-01T12:01Z"
+      "stopped_at": "2020-02-01T12:01Z"
     }
     ```
 
@@ -149,20 +148,20 @@ $ jobs-manager start ls -l /
 The arguments are sent as is to the backend.
 
 - Listing jobs
-```shell
+```shellscript
 $ jobs-manager list
-ID | STATUS | CREATED_AT | DONE_AT
+ID | STATUS | CREATED AT | STOPPED AT
 1 | RUNNING | 2020-01-01T12:01Z | -
 2 | KILLED | 2020-01-01T12:01Z | 2020-01-02T12:01Z
 ```
 
 - Job details
-```shell
+```shellscript
 $ jobs-manager details 1
 RUNNING, created: 2020-01-01T12:01Z
 
 $ jobs-manager details 2
-KILLED, created: 2020-01-01T12:01Z, done: 2020-01-02T12:01Z
+KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
 
 STDOUT:
 line 1
@@ -175,12 +174,12 @@ line 2
 
 - Stopping Job
 
-```shell
+```shellscript
 $ jobs-manager stop 1
 OK
 ```
 
-If the backend returns error messages the can be additionally displayed to the user, otherwise the HTTP error codes are translated to a human friendly erorr message (on stderr).
+If the backend returns error messages these can be additionally displayed to the user, otherwise the HTTP error codes are translated to a human friendly erorr message (on stderr).
 
 ## AUTH
 
@@ -192,8 +191,8 @@ The user is authenticated by the backend using mTLS. There is only one user, any
 
 The user is restricted in the jobs he can execute.
 
-There can be 2 Levels for example, where on the first level the user can only execute from a whitelist of $PATH programs (like `ls`) and on Level 2 can execute all programs in $PATH or anywhere in the system.
+There can be 2 Levels, where on the first level the user can only execute from a whitelist of $PATH programs (like `ls`) and on Level 2 can execute all programs in $PATH or anywhere in the system.
 
-When a user tries to execute a LEVEL 2 program but only has LEVEL 1 access the backend return the 401 status code.
+When a user tries to execute a LEVEL 2 program but only has LEVEL 1 access the backend returns the 401 status code.
 
-The level of the user can be stored as a config for the backend.
+The level of the user can be stored as a config on the backend.
