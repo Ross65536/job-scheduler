@@ -55,7 +55,7 @@ when the process is stopped or finished normally.
     }
     ```
 
-  - 401: Unauthorized
+  - 401: When user doesn't have permission to start job
 
   - 400: when failed to create job
 
@@ -88,8 +88,6 @@ when the process is stopped or finished normally.
     ]
     ```
 
-  - 401: Unauthorized
-
   This is used by the CLI to display the list of jobs.
 
   The results are not simply a list of IDs because the show status endpoint also returns
@@ -119,8 +117,6 @@ when the process is stopped or finished normally.
     }
     ```
 
-  - 401: Unauthorized
-
   - 404: when invalid ID
 
 
@@ -129,8 +125,6 @@ when the process is stopped or finished normally.
   Possible HTTP Response:
 
   - 202: When process was signalled to stop
-
-  - 401: Unauthorized
 
   - 404: when invalid ID
 
@@ -159,7 +153,7 @@ The backend can return errors like 404, 409, these can have a body describing th
 
 ## CLI Client
 
-The client is a simple stateless, user-friendly, mapping to the backend.
+The client is a simple stateless, user-friendly, 1-to-1 mapping to the backend API.
 
 Example usage:
 
@@ -181,10 +175,10 @@ ID | STATUS | CREATED AT | STOPPED AT
 
 - Job details
 ```shellscript
-$ jobs-manager details 1
+$ jobs-manager show 1
 RUNNING, created: 2020-01-01T12:01Z
 
-$ jobs-manager details 2
+$ jobs-manager show 2
 KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
 
 STDOUT:
