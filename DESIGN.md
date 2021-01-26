@@ -9,27 +9,30 @@ Multiple users can communicate with the backend.
 
 The backend can start, show status and stop a job. A job is a Unix process.
 
-The backend makes use of a SQL database.
-
 A job can have the status of `RUNNING`, `KILLED` or `FINISHED`.
 
 The `CWD` of the backend is the home folder of a user 
 (which ideally should be a user created just for the backend).
 
-### SQL Database
+### 'Database'
 
-The SQL database will keep track of started jobs and their results.
+The backend makes use of global state to store information about jobs.
+The state will keep track of started jobs and their results.
 
-Table `jobs`:
+The state is a hash of structs:
 
-| id | external_id | pid | command | status | stdout | stderr | exit_code | created_at | stopped_at |
-| -- | ----------- | --- | ------- | ------ | ------ | ------ | --------- | ---------- | ------- |
-| int | int or string | int | string |  enum (int) | string | string | int | datetime | datetime
-|     | NOT NULL, UNIQUE | NOT NULL, INDEXED | |||| NOT NULL, INDEXED | INDEXED
-| internal to DB | ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time when job started | time when job is killed or has finished
+| id | pid | command | status | stdout | stderr | exit_code | created_at | stopped_at |
+| ----------- | --- | ------- | ------ | ------ | ------ | --------- | ---------- | ------- |
+| string (hash key) | int | string |  enum (int) | string | string | int | datetime | datetime
+| NOT NULL, UNIQUE | NOT NULL | |||| NOT NULL | 
+| ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time when job started | time when job is killed or has finished
 
-The DB will only contain values for `exit_code`, `stopped_at`, `stdout`, `stderr` 
+The `id` field is a uuid.
+
+The state will only contain values for `exit_code`, `stopped_at`
 when the process is stopped or finished normally.
+
+The values for `stdout`, `stderr` are updated as the job runs and the bytes are available.
 
 
 ### RESTfull API
@@ -61,13 +64,13 @@ when the process is stopped or finished normally.
 
 
   The backend spawns a thread/goroutine to create the process using `exec` with the 
-  arguments as specified in the request body, and `wait`s on it's termination. 
+  arguments as specified in the request body, and waits on it's termination. 
   The stdout and stderr are overridden with pipes to be able to return them to the client. 
-  When a job is created the job status is added to the DB with `RUNNING` status and the ID 
+  When a job is created the job status is added to the state with `RUNNING` status and the ID 
   is returned to the client. 
-  When the job is finished normally (with exit 0 or otherwise) the DB is updated 
-  with `FINISHED` status and the `stdout`, `stderr` and `exit_code` results are 
-  written to the DB, but when a job is stopped by the user the status is set as `KILLED`.
+  When the job is finished normally (with exit 0 or otherwise) the state is updated 
+  with `FINISHED` status and the `exit_code` is written to the state, but when a job is stopped by the user the status is set as `KILLED`.
+  While the job is running, the spawned thread waits on the overridden `stdout` pipe, as the bytes arrive they are appended to the state, same for `stderr`, when both pipes are closed the thread will wait on the child's PID for it to finish.
 
   There is a danger here that a user can execute a malicious job (like `rm -rf /`) which will be ignored.
 
@@ -105,18 +108,10 @@ when the process is stopped or finished normally.
   
   - 200:
     ```javascript
-    // if newly created
     {
-      "status": "RUNNING",
-      "created_at": "2020-01-01T12:01Z",
-      "command": "ls -l /"
-    }
-
-    // if stopped or the job finished normally
-    {
-      "status": "KILLED" | "FINISHED",
+      "status": "RUNNING" | "KILLED" | "FINISHED",
       "exit_code": 123,
-      "command": "ls -l /",
+      "command": ["ls", "-l", "/"],
       "stdout": "...",
       "stderr": "...",
       "created_at": "2020-01-01T12:01Z",
@@ -139,21 +134,22 @@ when the process is stopped or finished normally.
 
   - 404: when invalid ID
 
-  - 409: when there might be a race condition
+  - 409: when there might be a race condition (see below)
 
-  The backend will send a `SIGINT` signal to the child to stop. 
+  The backend will send a `SIGTERM` signal to the child to stop. 
   The user must then query using the show status to see when it is actually stopped. 
   The signal is only sent when the job has `RUNNING` status. 
   Given that a job might hang it could be possible to add a param to specify whether to use `SIGKILL`.
 
   There is a delay from the backend collecting the child job's PID and the backend writing 
-  to the DB that the job is no longer `RUNNING`. 
+  to the state that the job is no longer `RUNNING`. 
   In this time window another process might have started which could reuse the waited job's PID, 
   and a user could try to stop the already waited job which will cause the new job which has 
   the recycled PID to stop. 
-  To solve this the backend could check if there are more than 1 jobs in the DB with the same 
+  To solve this the backend could check if there are more than 1 jobs in the state with the same 
   PID and status `RUNNING` or to check if there is a process with the PID to be stopped but a 
   PPID different from the backend in which case the signal isn't sent and the backend returns 409.
+  This race condition will be ignored in the implementation
 
 The backend can return errors like 404, 409, these can have a body describing the error with the format:
 ```javascript
