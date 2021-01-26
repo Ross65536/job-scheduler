@@ -54,7 +54,7 @@ The values for `stdout`, `stderr` are updated as the job runs and the bytes are 
       "id": "123", // ID which can be used to query status or stop job, it's an internally generated ID
       "status": "RUNNING",
       "created_at": "2020-01-01T12:01Z", // ISO8601 format
-      "command": "ls -l /"
+      "command": ["ls", "-l", "./code"]
     }
     ```
 
@@ -84,7 +84,7 @@ The values for `stdout`, `stderr` are updated as the job runs and the bytes are 
       {
         "id": "123",
         "status": "RUNNING" | "STOPPED" | "KILLED",
-        "command": "ls -l /",
+        "command": ["ls", "-l", "./code"],
         "created_at": "2020-01-01T12:01Z", // ISO8601 format
         "stopped_at": "2020-02-01T12:01Z", // present if not RUNNING, ISO8601 format
       },
