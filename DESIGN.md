@@ -3,7 +3,7 @@
 The complete solution consists of a backend server serving a RESTfull 
 HTTP+JSON interface and a CLI client that connects to this server. 
 
-It is assumed that there is only 1 user using the backend.
+Multiple users can communicate with the backend.
 
 ## Backend
 
@@ -55,9 +55,9 @@ when the process is stopped or finished normally.
     }
     ```
 
-  - 401: When user doesn't have permission to start job
-
   - 400: when failed to create job
+
+  - 401: On incorrect HTTP Basic credentials
 
 
   The backend spawns a thread/goroutine to create the process using `exec` with the 
@@ -88,6 +88,8 @@ when the process is stopped or finished normally.
       ...
     ]
     ```
+
+  - 401: On incorrect HTTP Basic credentials
 
   This is used by the CLI to display the list of jobs.
 
@@ -121,6 +123,8 @@ when the process is stopped or finished normally.
       "stopped_at": "2020-02-01T12:01Z"
     }
     ```
+  
+  - 401: On incorrect HTTP Basic credentials
 
   - 404: when invalid ID
 
@@ -130,6 +134,8 @@ when the process is stopped or finished normally.
   Possible HTTP Response:
 
   - 202: When process was signalled to stop
+
+  - 401: On incorrect HTTP Basic credentials
 
   - 404: when invalid ID
 
@@ -164,7 +170,7 @@ Example usage:
 
 - Start job
 ```shellscript
-$ jobs-manager -c 127.0.0.1:8080 start ls -l /
+$ jobs-manager start ls -l /
 1 # the ID
 ```
 
@@ -172,7 +178,7 @@ The arguments are sent as is to the backend.
 
 - Listing jobs
 ```shellscript
-$ jobs-manager -c 127.0.0.1:8080 list
+$ jobs-manager list
 ID | STATUS | COMMAND | CREATED AT | STOPPED AT
 1 | RUNNING | ls -l / | 2020-01-01T12:01Z | -
 2 | KILLED | task 123 | 2020-01-01T12:01Z | 2020-01-02T12:01Z
@@ -180,10 +186,10 @@ ID | STATUS | COMMAND | CREATED AT | STOPPED AT
 
 - Job details
 ```shellscript
-$ jobs-manager -c 127.0.0.1:8080 show 1
+$ jobs-manager show 1
 ls -l /, RUNNING, created: 2020-01-01T12:01Z
 
-$ jobs-manager -c 127.0.0.1:8080 show 2
+$ jobs-manager show 2
 task 123, KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
 
 STDOUT:
@@ -198,21 +204,26 @@ line 2
 - Stopping Job
 
 ```shellscript
-$ jobs-manager -c 127.0.0.1:8080 stop 1
+$ jobs-manager stop 1
 OK
 ```
-
-The `-c` flag specifies the server location. This could be cached between command executions to simplify the interface
 
 If the backend returns error messages these can be additionally displayed to the user, 
 otherwise the HTTP error codes are translated to a human friendly error message (on stderr).
 
-## AUTH
+Flags:
+
+These will probably be hardcoded on the client instead.
+
+- The `-c` flag specifies the server location and the HTTP Basic authn for the user. This could be cached between command executions to simplify the interface. Example: `-c user1:pass1@127.0.0.1:8080`
+- The `-cert` flag specifies the filepath of the server's public key. 
+
+## Auth
 
 ### Authentication
 
-The user is authenticated by the backend using mTLS. 
-There is only one user, anyone having the private key can use the API.
+Users are authenticated using HTTP Basic.
+Client will authenticate the server using the HTTPS certificate. Client will have pinned the public key.
 
 ### Authorization
 
