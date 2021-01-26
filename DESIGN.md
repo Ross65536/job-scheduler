@@ -134,22 +134,10 @@ The values for `stdout`, `stderr` are updated as the job runs and the bytes are 
 
   - 404: when invalid ID
 
-  - 409: when there might be a race condition (see below)
-
   The backend will send a `SIGTERM` signal to the child to stop. 
   The user must then query using the show status to see when it is actually stopped. 
   The signal is only sent when the job has `RUNNING` status. 
   Given that a job might hang it could be possible to add a param to specify whether to use `SIGKILL`.
-
-  There is a delay from the backend collecting the child job's PID and the backend writing 
-  to the state that the job is no longer `RUNNING`. 
-  In this time window another process might have started which could reuse the waited job's PID, 
-  and a user could try to stop the already waited job which will cause the new job which has 
-  the recycled PID to stop. 
-  To solve this the backend could check if there are more than 1 jobs in the state with the same 
-  PID and status `RUNNING` or to check if there is a process with the PID to be stopped but a 
-  PPID different from the backend in which case the signal isn't sent and the backend returns 409.
-  This race condition will be ignored in the implementation
 
 The backend can return errors like 404, 409, these can have a body describing the error with the format:
 ```javascript
