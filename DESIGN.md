@@ -13,24 +13,46 @@ A job can have the status of `RUNNING`, `KILLED` or `FINISHED`.
 
 ### State
 
-The backend makes use of global state to store information about jobs.
+The backend makes use of global state to store information about jobs and users.
 The state will keep track of started jobs and their results.
 
-The state is a hash of structs:
+- Jobs:
 
-| id | pid | command | status | stdout | stderr | exit_code | created_at | stopped_at |
-| ----------- | --- | ------- | ------ | ------ | ------ | --------- | ---------- | ------- |
-| string (hash key) | int | string |  enum (int) | string | string | int | datetime | datetime
-| NOT NULL, UNIQUE | NOT NULL | |||| NOT NULL | 
-| ID exposed to the client | Unix process ID | command name + argv | status of job | process stdout | process stderr | process exit code | time when job started | time when job is killed or has finished
+```golang
+type Job struct {
+  Id string, // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
+  Pid int,  // Unix process ID
+  Command []string, // command name + argv, NOT EMPTY
+  Status string, // status of job, one of `RUNNING`, `KILLED` or `FINISHED`, NOT EMPTY
+  Stdout string, // process stdout 
+  Stderr string, // process stderr 
+  ExitCode int, // process exit code
+  CreatedAt time.Time, // time when job started, NOT EMPTY
+  StoppedAt time.Time // time when job is killed or has finished
+}
 
-The `id` field is a uuid.
+var jobIndex map[string][Job] // maps ID to Job struct
+```
 
-The state will only contain values for `exit_code`, `stopped_at`
+The `Id` field is a uuid.
+
+The state will only contain values for `ExitCode`, `StoppedAt`
 when the process is stopped or finished normally.
 
-The values for `stdout`, `stderr` are updated as the job runs and the bytes are available.
+The values for `Stdout`, `Stderr` are updated as the job runs and the bytes are available.
 
+- Users: 
+
+```golang
+type User struct {
+  Username string,
+  Password string, // these will probably be a BCrypt hash
+}
+
+var usersIndex map[string][User] // maps username to user struct
+```
+
+These will be pre-initialized (hardcoded) and will contains the list of valid users.
 
 ### RESTfull API
 
@@ -55,9 +77,11 @@ The values for `stdout`, `stderr` are updated as the job runs and the bytes are 
     }
     ```
 
-  - 400: when failed to create job
+  - 400: when failed to create job because of user error (e. g. non existing program)
 
   - 401: On incorrect HTTP Basic credentials
+
+  - 500: when job failed to create because of server error (e. g. OOM)
 
 
   The backend spawns a thread/goroutine to create the process using `exec` with the 
@@ -203,8 +227,9 @@ These will probably be hardcoded on the client instead.
 
 ### Authentication
 
-Users are authenticated using HTTP Basic.
-Client will authenticate the server using the HTTPS certificate. Client will have pinned the public key.
+Users are authenticated using HTTP Basic. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching password. If the credentials match the user is authenticated.
+
+Client will authenticate the server using the HTTPS certificate. Client will have hardcoded/stored somewhere the server's SSL public key.
 
 ### Authorization
 
