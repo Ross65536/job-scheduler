@@ -5,6 +5,8 @@ HTTP+JSON interface and a CLI client that connects to this server.
 
 Multiple users can communicate with the backend.
 
+The commands and filepaths specified must be absolute paths or in $PATH.
+
 ## Backend
 
 The backend can start, show status and stop a job. A job is a Unix process.
