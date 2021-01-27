@@ -11,10 +11,7 @@ The backend can start, show status and stop a job. A job is a Unix process.
 
 A job can have the status of `RUNNING`, `KILLED` or `FINISHED`.
 
-The `CWD` of the backend is the home folder of a user 
-(which ideally should be a user created just for the backend).
-
-### 'Database'
+### State
 
 The backend makes use of global state to store information about jobs.
 The state will keep track of started jobs and their results.
