@@ -251,11 +251,4 @@ Client will authenticate the server using the HTTPS certificate. Client will hav
 
 ### Authorization
 
-The user is restricted in the jobs he can execute.
-
-There can be 2 Levels, where on the first level the user can only execute from a whitelist of 
-$PATH programs (like `ls`) and on Level 2 can execute all programs in $PATH or anywhere in the system.
-
-When a user tries to execute a LEVEL 2 program but only has LEVEL 1 access the backend returns the 401 status code.
-
-The level of the user can be stored as a config on the backend.
+The user can only see and stop jobs created by himself. To do that `userJobsIndex` is used as described before: new jobs are stored in this index. To check if a job belongs to a user (given a job ID) the `userJobsIndex[username]` values are searched for a matching job ID (there could be another index to speed this up). The list of user jobs is simply `userJobsIndex[username]`.
