@@ -50,7 +50,7 @@ The values for `Stdout`, `Stderr` are updated as the job runs and the bytes are 
 ```golang
 type User struct {
   Username string,
-  Token string, // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex format
+  Token string, // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex or base64 format
   // Password string, // not used, would be stored using as hash using BCrypt
 }
 
@@ -58,6 +58,8 @@ var usersIndex map[string][User] // maps username to user struct
 
 var userJobsIndex map[string][Job] // maps username to jobs started by user
 ```
+
+The `Token` is a CSPRNG-random string unique to each user. Would be 32 bytes.
 
 These will be pre-initialized (hardcoded) and will contains the list of valid users.
 
@@ -243,7 +245,7 @@ These will probably be hardcoded on the client instead.
 
 ### Authentication
 
-Users are authenticated using HTTP Basic where the user is the username and password is the API token. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching token. If the credentials match the user is authenticated.
+Users are authenticated using HTTP Basic where the user is the username and password is the API token. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching token: the username is used as key for `usersIndex` and the basic password is compared against the `User.Token` field. If the credentials match the user is authenticated.
 
 Client will authenticate the server using the HTTPS certificate. Client will have hardcoded/stored somewhere the server's SSL public key.
 
