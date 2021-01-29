@@ -34,8 +34,6 @@ type Job struct {
   CreatedAt time.Time, // time when job started, NOT EMPTY
   StoppedAt time.Time // time when job is killed or has finished
 }
-
-var jobIndex map[string][Job] // maps ID to Job struct
 ```
 
 The `Id` field is a uuid.
@@ -52,14 +50,17 @@ type User struct {
   Username string,
   Token string, // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex or base64 format
   // Password string, // not used, would be stored using as hash using BCrypt
+  Jobs map[string]Job // Index. list of jobs that belong to the user. Index key is the job ID.
 }
-
-var usersIndex map[string][User] // maps username to user struct
-
-var userJobsIndex map[string][Job] // maps username to jobs started by user
 ```
 
 The `Token` is a CSPRNG-random string unique to each user. Would be 32 bytes.
+
+- Indexes
+
+```golang
+var usersIndex map[string][User] // maps username to user struct
+```
 
 These will be pre-initialized (hardcoded) and will contains the list of valid users.
 
@@ -101,7 +102,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
   When the job is finished normally (with exit 0 or otherwise) the state is updated 
   with `FINISHED` status and the `exit_code` is written to the state, but when a job is stopped by the user the status is set as `KILLED`.
   While the job is running, the spawned thread waits on the overridden `stdout` pipe, as the bytes arrive they are appended to the state, same for `stderr`, when both pipes are closed the thread will wait on the child's PID for it to finish.
-  The job belongs to the user that created it (which can be obtained from the API token), when the job is created it is placed in `userJobsIndex` under the correct username.
+  The job belongs to the user that created it (which can be obtained from the API token), when the job is created it is placed in `User.Jobs` under the correct username for `usersIndex`.
 
   There is a danger here that a user can execute a malicious job (like `rm -rf /`) which will be ignored.
 
@@ -125,7 +126,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
 
   - 401: On incorrect HTTP Basic credentials
 
-  This is used by the CLI to display the list of jobs for the current user. The list is taken from `userJobsIndex`.
+  This is used by the CLI to display the list of jobs for the current user. The list is taken from `User.Jobs`.
 
   This endpoint could instead be designed to return a list of of job IDs (and nothing else) 
   which the client would then have to query the backend with each ID using the show status 
@@ -183,7 +184,7 @@ The backend can return errors like 404, 409, these can have a body describing th
 
 - 401: The backend will check that the client has supplied the correct API token. This will be used to identify the user.
 
-- 404 (on incorrect ID): the backend checks that the job ID belongs to the user specified by the token by using `userJobsIndex`. 
+- 404 (on incorrect ID): the backend checks that the job ID belongs to the user specified by the token by using the `User.Jobs` keys. 
 
 ## CLI Client
 
@@ -245,10 +246,10 @@ These will probably be hardcoded on the client instead.
 
 ### Authentication
 
-Users are authenticated using HTTP Basic where the user is the username and password is the API token. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching token: the username is used as key for `usersIndex` and the basic password is compared against the `User.Token` field. If the credentials match the user is authenticated.
+Users are authenticated using HTTP Basic where the user is the username and password is the API token. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching token: the username is used as key for `usersIndex` and the basic password is compared against the `User.Token` field. If the credentials match the user is authenticated, giving the `User` struct which will be used further by Authz.
 
 Client will authenticate the server using the HTTPS certificate. Client will have hardcoded/stored somewhere the server's SSL public key.
 
 ### Authorization
 
-The user can only see and stop jobs created by himself. To do that `userJobsIndex` is used as described before: new jobs are stored in this index. To check if a job belongs to a user (given a job ID) the `userJobsIndex[username]` values are searched for a matching job ID (there could be another index to speed this up). The list of user jobs is simply `userJobsIndex[username]`.
+The user can only see and stop jobs created by himself. To do that `User.Jobs` is used as described before: new jobs are stored in this index. To check if a job belongs to a user (given a job ID) the `User.Jobs` keys are searched for a matching job ID. The list of user jobs is simply the values of `User.Jobs`.
