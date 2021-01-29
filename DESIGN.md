@@ -56,13 +56,13 @@ type User struct {
 
 The `Token` is a CSPRNG-random string unique to each user. Would be 32 bytes.
 
+These will be pre-initialized (hardcoded) and will contain the list of valid users.
+
 - Indexes
 
 ```golang
 var usersIndex map[string][User] // maps username to user struct
 ```
-
-These will be pre-initialized (hardcoded) and will contains the list of valid users.
 
 ### RESTfull API
 
@@ -252,4 +252,8 @@ Client will authenticate the server using the HTTPS certificate. Client will hav
 
 ### Authorization
 
+<<<<<<< HEAD
 The user can only see and stop jobs created by himself. To do that `User.Jobs` is used as described before: new jobs are stored in this index. To check if a job belongs to a user (given a job ID) the `User.Jobs` keys are searched for a matching job ID. The list of user jobs is simply the values of `User.Jobs`.
+=======
+The user can only see and stop jobs created by himself. To do that `userJobsIndex` is used as described before: new jobs are stored in this index. To check if a job belongs to a user (given a job ID) the `userJobsIndex[username]` values are searched for a matching job ID (there could be another index to speed this up). The list of user jobs is simply `userJobsIndex[username]`.
+>>>>>>> 73881b871d25784113966e3254c8e059b0e02ae7
