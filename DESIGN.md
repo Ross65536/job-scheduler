@@ -13,6 +13,8 @@ The backend can start, show status and stop a job. A job is a Unix process.
 
 A job can have the status of `RUNNING`, `KILLED` or `FINISHED`.
 
+A job belongs to a user that started it. A user can only view or modify his own jobs.
+
 ### State
 
 The backend makes use of global state to store information about jobs and users.
@@ -48,10 +50,13 @@ The values for `Stdout`, `Stderr` are updated as the job runs and the bytes are 
 ```golang
 type User struct {
   Username string,
-  Password string, // these will probably be a BCrypt hash
+  Token string, // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex format
+  // Password string, // not used, would be stored using as hash using BCrypt
 }
 
 var usersIndex map[string][User] // maps username to user struct
+
+var userJobsIndex map[string][Job] // maps username to jobs started by user
 ```
 
 These will be pre-initialized (hardcoded) and will contains the list of valid users.
@@ -94,6 +99,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
   When the job is finished normally (with exit 0 or otherwise) the state is updated 
   with `FINISHED` status and the `exit_code` is written to the state, but when a job is stopped by the user the status is set as `KILLED`.
   While the job is running, the spawned thread waits on the overridden `stdout` pipe, as the bytes arrive they are appended to the state, same for `stderr`, when both pipes are closed the thread will wait on the child's PID for it to finish.
+  The job belongs to the user that created it (which can be obtained from the API token), when the job is created it is placed in `userJobsIndex` under the correct username.
 
   There is a danger here that a user can execute a malicious job (like `rm -rf /`) which will be ignored.
 
@@ -117,7 +123,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
 
   - 401: On incorrect HTTP Basic credentials
 
-  This is used by the CLI to display the list of jobs.
+  This is used by the CLI to display the list of jobs for the current user. The list is taken from `userJobsIndex`.
 
   This endpoint could instead be designed to return a list of of job IDs (and nothing else) 
   which the client would then have to query the backend with each ID using the show status 
@@ -146,6 +152,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
 
   - 404: when invalid ID
 
+  Show job if it belongs to user
 
 - Stop job: `DELETE /api/jobs/:id`
 
@@ -157,6 +164,7 @@ These will be pre-initialized (hardcoded) and will contains the list of valid us
 
   - 404: when invalid ID
 
+  Stop job if it belongs to user.
   The backend will send a `SIGTERM` signal to the child to stop. 
   The user must then query using the show status to see when it is actually stopped. 
   The signal is only sent when the job has `RUNNING` status. 
@@ -168,6 +176,12 @@ The backend can return errors like 404, 409, these can have a body describing th
   "message": "Something went wrong" // optional
 }
 ```
+
+- Common responses
+
+- 401: The backend will check that the client has supplied the correct API token. This will be used to identify the user.
+
+- 404 (on incorrect ID): the backend checks that the job ID belongs to the user specified by the token by using `userJobsIndex`. 
 
 ## CLI Client
 
@@ -229,7 +243,7 @@ These will probably be hardcoded on the client instead.
 
 ### Authentication
 
-Users are authenticated using HTTP Basic. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching password. If the credentials match the user is authenticated.
+Users are authenticated using HTTP Basic where the user is the username and password is the API token. The credentials are checked against the `usersIndex` global state to see if there is a user and a matching token. If the credentials match the user is authenticated.
 
 Client will authenticate the server using the HTTPS certificate. Client will have hardcoded/stored somewhere the server's SSL public key.
 
