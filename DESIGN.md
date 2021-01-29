@@ -61,7 +61,7 @@ var userJobsIndex map[string][Job] // maps username to jobs started by user
 
 The `Token` is a CSPRNG-random string unique to each user. Would be 32 bytes.
 
-These will be pre-initialized (hardcoded) and will contains the list of valid users.
+These will be pre-initialized (hardcoded) and will contain the list of valid users.
 
 ### RESTfull API
 
