@@ -6,10 +6,12 @@ import (
 	"os/exec"
 )
 
-const ()
+const (
+	bufSize = 256
+)
 
 func readPipe(consumer func([]byte), r io.Reader, ch chan<- bool) {
-	buffer := make([]byte, 16)
+	buffer := make([]byte, bufSize)
 
 	for {
 		n, err := r.Read(buffer)
