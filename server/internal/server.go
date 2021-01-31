@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -65,7 +66,7 @@ func getUser(r *http.Request) *User {
 	return user
 }
 
-func writeJson(w http.ResponseWriter, statusCode int, model interface{}) {
+func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(model)
@@ -77,18 +78,32 @@ func writeHTTPError(w http.ResponseWriter, statusCode int, errorMessage string) 
 		"message": errorMessage,
 	}
 
-	writeJson(w, statusCode, error)
+	writeJSON(w, statusCode, error)
 }
 
 func getJobs(w http.ResponseWriter, r *http.Request) {
 	user := getUser(r)
 
 	jobs := user.GetAllJobs()
-	writeJson(w, http.StatusOK, jobs)
+	writeJSON(w, http.StatusOK, jobs)
 }
 
 type jobCreateModel struct {
 	Command []string
+}
+
+func (j *jobCreateModel) isValid() bool {
+	if j.Command == nil || len(j.Command) < 1 {
+		return false
+	}
+
+	if program := j.Command[0]; len(strings.TrimSpace(program)) == 0 {
+		return false
+	}
+
+	// TODO: add more sanity checks like invalid characters, etc
+
+	return true
 }
 
 func createJob(w http.ResponseWriter, r *http.Request) {
@@ -97,8 +112,12 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	var createJob jobCreateModel
 	json.Unmarshal(reqBody, &createJob)
+	if !createJob.isValid() {
+		writeHTTPError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command'")
+		return
+	}
 
 	job := user.CreateJob(createJob.Command)
 
-	writeJson(w, http.StatusCreated, job)
+	writeJSON(w, http.StatusCreated, job)
 }
