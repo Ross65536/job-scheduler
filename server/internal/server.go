@@ -27,6 +27,7 @@ func StartServer() {
 	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
 	jobsRouter.Use(jobIdMiddleware)
 	jobsRouter.HandleFunc("", getJob).Methods("GET")
+	jobsRouter.HandleFunc("", stopJob).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
@@ -121,6 +122,14 @@ func getJob(w http.ResponseWriter, r *http.Request) {
 	job := getContextJob(r)
 
 	writeJSON(w, http.StatusOK, job)
+}
+
+func stopJob(w http.ResponseWriter, r *http.Request) {
+	_ = getContextJob(r)
+
+	// TODO
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func getJobs(w http.ResponseWriter, r *http.Request) {
