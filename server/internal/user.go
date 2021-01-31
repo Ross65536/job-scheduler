@@ -85,11 +85,11 @@ func GetIndexedUser(username string, password string) *User {
 func InitializeUsers() {
 	usersIndex = map[string]User{
 		"user1": User{
-			token: "1234",
+			token: "XlG15tRINdWTAm5oZ/mhikbEiwf75w0LJUVek0ROhY4=",
 			jobs:  map[string]*Job{},
 		},
 		"user2": User{
-			token: "1234",
+			token: "oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=",
 			jobs:  map[string]*Job{},
 		},
 	}
