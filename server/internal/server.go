@@ -3,10 +3,8 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -25,52 +23,42 @@ func StartServer() {
 	topRouter.HandleFunc("", createJob).Methods("POST")
 
 	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
-	jobsRouter.Use(jobIdMiddleware)
+	jobsRouter.Use(jobIDMiddleware)
 	jobsRouter.HandleFunc("", getJob).Methods("GET")
 	jobsRouter.HandleFunc("", stopJob).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
 
-func validateUserCredentials(w http.ResponseWriter, r *http.Request) *User {
-	if username, password, ok := r.BasicAuth(); ok {
-		if user := GetIndexedUser(username, password); user != nil {
-			return user
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if username, password, ok := r.BasicAuth(); ok {
+			if user := GetIndexedUser(username, password); user != nil {
+				ctx := context.WithValue(r.Context(), userCtxKey, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+			}
+
+			log.Print("Client supplied invalid username or password")
+		} else {
+			log.Print("Client didn't provide Basic auth")
 		}
 
-		log.Print("Client supplied invalid username or password")
-	} else {
-		log.Print("Client didn't provide Basic auth")
-	}
-
-	writeHTTPError(w, http.StatusUnauthorized, "Invalid user credentials")
-	return nil
+		writeJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
+	})
 }
 
-func jobIdMiddleware(next http.Handler) http.Handler {
+func jobIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := getContextUser(r)
 		id := mux.Vars(r)["id"]
 
 		job := user.GetJob(id)
 		if job == nil {
-			writeHTTPError(w, http.StatusNotFound, "invalid ID")
+			writeJSONError(w, http.StatusNotFound, "invalid ID")
 			return
 		}
 
 		ctx := context.WithValue(r.Context(), jobCtxKey, job)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserCredentials(w, r)
-		if user == nil {
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), userCtxKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -109,7 +97,7 @@ func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
 	json.NewEncoder(w).Encode(model)
 }
 
-func writeHTTPError(w http.ResponseWriter, statusCode int, errorMessage string) {
+func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) {
 	error := map[string]interface{}{
 		"status":  statusCode,
 		"message": errorMessage,
@@ -139,32 +127,12 @@ func getJobs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jobs)
 }
 
-type jobCreateModel struct {
-	Command []string
-}
-
-func (j *jobCreateModel) isValid() bool {
-	if j.Command == nil || len(j.Command) < 1 {
-		return false
-	}
-
-	if program := j.Command[0]; len(strings.TrimSpace(program)) == 0 {
-		return false
-	}
-
-	// TODO: add more sanity checks like invalid characters, etc
-
-	return true
-}
-
 func createJob(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
 
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	var createJob jobCreateModel
-	json.Unmarshal(reqBody, &createJob)
-	if !createJob.isValid() {
-		writeHTTPError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command'")
+	createJob := ParseJobCreation(r.Body)
+	if createJob == nil || !createJob.IsValid() {
+		writeJSONError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command' in POST body")
 		return
 	}
 
