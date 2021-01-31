@@ -10,7 +10,7 @@ import (
 
 // User's username is already stored in the 'usersIndex' keys
 type User struct {
-	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex or base64 format
+	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in base64 format
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
 	jobsLock sync.Mutex
 }

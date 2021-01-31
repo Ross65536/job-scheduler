@@ -20,7 +20,7 @@ type Job struct {
 	id        string      // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
 	proc      *os.Process // Unix process ID
 	command   []string    // command name + argv, NOT EMPTY
-	status    JobStatus   // status of job, one of `RUNNING`, `KILLED` or `FINISHED`, NOT EMPTY
+	status    JobStatus   // status of job, NOT EMPTY
 	stdout    []byte      // process stdout
 	stderr    []byte      // process stderr
 	exitCode  *int        // process exit code
