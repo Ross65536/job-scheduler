@@ -3,6 +3,7 @@ package internal
 import (
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"syscall"
 )
@@ -87,14 +88,21 @@ func SpawnJob(command []string, c chan<- *Job) {
 }
 
 func StopJob(job *Job) bool {
-	if job.GetStatus() != JobRunning {
+	jobStatus := job.GetStatus()
+	if jobStatus != JobRunning && jobStatus != JobStopping {
 		return true
 	}
 
-	if err := job.GetProcess().Signal(syscall.SIGTERM); err != nil {
+	var signal os.Signal = syscall.SIGTERM
+	if jobStatus == JobStopping {
+		signal = os.Kill
+	}
+
+	if err := job.GetProcess().Signal(signal); err != nil {
 		log.Printf("Something went wrong sending a signal %s", err)
 		return false
 	}
 
+	job.StoppingJob()
 	return true
 }

@@ -12,6 +12,7 @@ const (
 	JobRunning  JobStatus = "RUNNING"
 	JobFinished JobStatus = "FINISHED"
 	JobStopped  JobStatus = "STOPPED"
+	JobStopping JobStatus = "STOPPING"
 	JobKilled   JobStatus = "KILLED"
 )
 
@@ -77,6 +78,16 @@ func (j *Job) UpdateStderr(bytes []byte) {
 	j.lock.Lock()
 
 	j.stderr = append(j.stderr, bytes...)
+
+	j.lock.Unlock()
+}
+
+func (j *Job) StoppingJob() {
+	j.lock.Lock()
+
+	if j.status == JobRunning {
+		j.status = JobStopping
+	}
 
 	j.lock.Unlock()
 }
