@@ -12,7 +12,7 @@ const (
 	bufSize = 256
 )
 
-func readPipe(consumer func([]byte), r io.Reader, ch chan<- bool) {
+func readPipe(consumer func([]byte), r io.ReadCloser, ch chan<- bool) {
 	buffer := make([]byte, bufSize)
 
 	for {
@@ -25,6 +25,7 @@ func readPipe(consumer func([]byte), r io.Reader, ch chan<- bool) {
 			continue
 		}
 
+		r.Close()
 		if err == io.EOF {
 			ch <- true
 		} else {
