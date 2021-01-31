@@ -2,10 +2,13 @@
 
 ## Instructions
 
-Must be run inside the `server` folder
+Must be run inside the `server` folder.
+
+Server listens on http://localhost:10000
 
 - Running:
 ```shell
+
 go run main.go
 ```
 
