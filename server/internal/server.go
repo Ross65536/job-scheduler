@@ -14,10 +14,9 @@ const (
 	jobCtxKey  = "job"
 )
 
-func StartServer() {
+func CreateRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(authMiddleware)
-
 	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
 
 	topRouter := router.PathPrefix("/api/jobs").Subrouter()
@@ -28,6 +27,12 @@ func StartServer() {
 	jobsRouter.Use(jobIDMiddleware)
 	jobsRouter.HandleFunc("", getJob).Methods("GET")
 	jobsRouter.HandleFunc("", stopJob).Methods("DELETE")
+
+	return router
+}
+
+func StartServer() {
+	router := CreateRouter()
 
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
