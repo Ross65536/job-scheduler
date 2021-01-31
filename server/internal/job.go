@@ -1,6 +1,9 @@
 package internal
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type JobStatus string
 
@@ -20,6 +23,7 @@ type Job struct {
 	exitCode  *int       // process exit code
 	createdAt time.Time  // time when job started, NOT EMPTY
 	stoppedAt *time.Time // time when job is killed or has finished
+	lock      sync.Mutex
 }
 
 func CreateJob(id string, command []string, pid int) *Job {
@@ -33,10 +37,13 @@ func CreateJob(id string, command []string, pid int) *Job {
 		nil,
 		time.Now(),
 		nil,
+		sync.Mutex{},
 	}
 }
 
 func (j *Job) AsMap() map[string]interface{} {
+	j.lock.Lock()
+
 	m := map[string]interface{}{
 		"id":         j.id,
 		"command":    j.command,
@@ -47,6 +54,8 @@ func (j *Job) AsMap() map[string]interface{} {
 		"stopped_at": j.stoppedAt,
 		"created_at": j.createdAt,
 	}
+
+	j.lock.Unlock()
 
 	return m
 }
