@@ -91,11 +91,9 @@ var usersIndex map[string][User] // maps username to user struct
     }
     ```
 
-  - 400: when failed to create job because of user error (e. g. non existing program)
-
   - 401: On incorrect HTTP Basic credentials
 
-  - 500: when job failed to create because of server error (e. g. OOM)
+  - 500: when job failed to create because of server error (e. g. OOM, non-existing program, etc)
 
 
   The backend spawns a thread/goroutine to create the process using `exec` with the 
