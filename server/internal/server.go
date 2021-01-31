@@ -160,7 +160,7 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 
 	job := <-ch
 	if job == nil {
-		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
+		writeJSONError(w, http.StatusConflict, "Failed to start job")
 		return
 	}
 

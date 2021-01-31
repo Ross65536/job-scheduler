@@ -9,11 +9,11 @@ import (
 type JobStatus string
 
 const (
-	JobRunning  JobStatus = "RUNNING"
-	JobFinished JobStatus = "FINISHED"
-	JobStopped  JobStatus = "STOPPED"
-	JobStopping JobStatus = "STOPPING"
-	JobKilled   JobStatus = "KILLED"
+	jobRunning  JobStatus = "RUNNING"
+	jobFinished JobStatus = "FINISHED"
+	jobStopped  JobStatus = "STOPPED"
+	jobStopping JobStatus = "STOPPING"
+	jobKilled   JobStatus = "KILLED"
 )
 
 type Job struct {
@@ -34,7 +34,7 @@ func CreateJob(command []string, proc *os.Process) *Job {
 		"",
 		proc,
 		command,
-		JobRunning,
+		jobRunning,
 		[]byte{},
 		[]byte{},
 		nil,
@@ -52,15 +52,7 @@ func (j *Job) GetProcess() *os.Process {
 	return proc
 }
 
-func (j *Job) GetStatus() JobStatus {
-	j.lock.Lock()
-	status := j.status
-	j.lock.Unlock()
-
-	return status
-}
-
-func (j *Job) SetId(id string) {
+func (j *Job) SetID(id string) {
 	j.lock.Lock()
 	j.id = id
 	j.lock.Unlock()
@@ -82,28 +74,58 @@ func (j *Job) UpdateStderr(bytes []byte) {
 	j.lock.Unlock()
 }
 
+func (j *Job) IsExecuting() bool {
+	j.lock.Lock()
+
+	running := j.status == jobRunning || j.status == jobStopping
+
+	j.lock.Unlock()
+
+	return running
+}
+
+func (j *Job) IsStopping() bool {
+	j.lock.Lock()
+
+	running := j.status == jobStopping
+
+	j.lock.Unlock()
+
+	return running
+}
+
+func (j *Job) endJob(status JobStatus) {
+	j.status = status
+	t := time.Now()
+	j.stoppedAt = &t
+}
+
 func (j *Job) StoppingJob() {
 	j.lock.Lock()
 
-	if j.status == JobRunning {
-		j.status = JobStopping
+	if j.status == jobRunning {
+		j.status = jobStopping
 	}
 
 	j.lock.Unlock()
 }
 
-func (j *Job) StopJob(status JobStatus) {
+func (j *Job) StopJob(normalStop bool) {
 	j.lock.Lock()
 
-	j.status = status
+	if normalStop {
+		j.endJob(jobStopped)
+	} else {
+		j.endJob(jobKilled)
+	}
 
 	j.lock.Unlock()
 }
 
-func (j *Job) FinishJob(status JobStatus, exitCode int) {
+func (j *Job) FinishJob(exitCode int) {
 	j.lock.Lock()
 
-	j.status = status
+	j.endJob(jobFinished)
 	j.exitCode = &exitCode
 
 	j.lock.Unlock()

@@ -62,7 +62,7 @@ func (u *User) AddJob(job *Job) {
 	u.jobsLock.Lock()
 	id := generateNewID(u.jobs)
 
-	job.SetId(id)
+	job.SetID(id)
 	u.jobs[id] = job
 	u.jobsLock.Unlock()
 }
