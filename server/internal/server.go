@@ -107,10 +107,12 @@ func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) 
 	writeJSON(w, statusCode, error)
 }
 
-func getJob(w http.ResponseWriter, r *http.Request) {
-	job := getContextJob(r).AsMap()
+var showJobFields = []string{"id", "status", "created_at", "exit_code", "command", "stopped_at", "stdout", "stderr"}
 
-	writeJSON(w, http.StatusOK, job)
+func getJob(w http.ResponseWriter, r *http.Request) {
+	job := getContextJob(r)
+
+	writeJSON(w, http.StatusOK, MapSubmap(job.AsMap(), showJobFields...))
 }
 
 func stopJob(w http.ResponseWriter, r *http.Request) {
