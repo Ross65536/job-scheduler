@@ -93,6 +93,8 @@ var usersIndex map[string][User] // maps username to user struct
 
   - 401: On incorrect HTTP Basic credentials
 
+  - 422: When user supplied malformed/invalid JSON
+
   - 500: when job failed to create because of server error (e. g. OOM, non-existing program, etc)
 
 
