@@ -14,7 +14,7 @@ const (
 	jobCtxKey  = "job"
 )
 
-func CreateRouter() *mux.Router {
+func CreateRouter() http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(authMiddleware)
 	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
