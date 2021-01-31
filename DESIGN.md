@@ -11,7 +11,12 @@ The commands and filepaths specified must be absolute paths or in $PATH.
 
 The backend can start, show status and stop a job. A job is a Unix process.
 
-A job can have the status of `RUNNING`, `FINISHED`, `STOPPING`, `STOPPED` or `KILLED`.
+A job can have the status of 
+- `RUNNING`: executing
+- `FINISHED`: job finished normally
+- `STOPPING`: user tried to stop the job
+- `STOPPED`: job stopped by user (in practice a best case guess is taken if it was actually the user that stopped the process)
+- `KILLED`: job stopped by system
 
 A job belongs to a user that started it. A user can only view or modify his own jobs.
 
