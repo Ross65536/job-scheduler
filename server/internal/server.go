@@ -121,7 +121,7 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-var listJobFields = []string{"id", "status", "created_at", "command", "stopped_at"}
+var listJobFields = []string{"id", "status", "created_at", "exit_code", "command", "stopped_at"}
 
 func getJobs(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
@@ -148,7 +148,15 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := CreateJob(createJob.Command, 1)
+	ch := make(chan *Job, 1)
+	go SpawnJob(createJob.Command, ch)
+
+	job := <-ch
+	if job == nil {
+		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
+		return
+	}
+
 	user.AddJob(job)
 
 	writeJSON(w, http.StatusCreated, MapSubmap(job.AsMap(), createdJobFields...))
