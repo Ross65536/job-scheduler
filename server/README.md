@@ -20,6 +20,11 @@ go install .
 ~/go/bin/server
 ```
 
+- Testing
+```shell
+go test ./...
+```
+
 ## MISC
 
 - Generating new token for a user
