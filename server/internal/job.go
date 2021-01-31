@@ -9,7 +9,7 @@ import (
 type JobStatus string
 
 const (
-	JobRunning  JobStatus = "RUNNING"
+	jobRunning  JobStatus = "RUNNING"
 	JobFinished JobStatus = "FINISHED"
 	JobStopped  JobStatus = "STOPPED"
 	JobKilled   JobStatus = "KILLED"
@@ -33,7 +33,7 @@ func CreateJob(command []string, proc *os.Process) *Job {
 		"",
 		proc,
 		command,
-		JobRunning,
+		jobRunning,
 		[]byte{},
 		[]byte{},
 		nil,
