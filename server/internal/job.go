@@ -113,7 +113,7 @@ func (j *Job) StoppingJob() {
 func (j *Job) StopJob(normalStop bool) {
 	j.lock.Lock()
 
-	if normalStop {
+	if normalStop && j.status == jobStopping {
 		j.endJob(jobStopped)
 	} else {
 		j.endJob(jobKilled)
