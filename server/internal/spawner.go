@@ -8,13 +8,13 @@ import (
 
 const ()
 
-func ReadPipe(job *Job, r io.Reader, ch chan<- bool) {
+func readPipe(consumer func([]byte), r io.Reader, ch chan<- bool) {
 	buffer := make([]byte, 16)
 
 	for {
 		n, err := r.Read(buffer)
 		if n != 0 {
-			job.UpdateStdout(buffer[:n])
+			consumer(buffer[:n])
 		}
 
 		if err == nil {
@@ -42,7 +42,7 @@ func SpawnJob(command []string, c chan<- *Job) {
 		return
 	}
 
-	_, stderrErr := cmd.StderrPipe()
+	stderr, stderrErr := cmd.StderrPipe()
 	if stderrErr != nil {
 		log.Printf("Failed to create stderr pipe %s, %s", command, stderrErr)
 		c <- nil
@@ -60,7 +60,9 @@ func SpawnJob(command []string, c chan<- *Job) {
 	c <- job
 
 	waiter := make(chan bool, 1)
-	go ReadPipe(job, stdout, waiter)
+	go readPipe(job.UpdateStdout, stdout, waiter)
+	go readPipe(job.UpdateStderr, stderr, waiter)
+	<-waiter
 	<-waiter
 
 	switch exitErr := cmd.Wait(); exitErr.(type) {
