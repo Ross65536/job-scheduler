@@ -15,9 +15,8 @@ type User struct {
 	jobsLock sync.Mutex
 }
 
-// there is no need to synchronize access with a mutex to this index,
-// since it is never modified by the backend, only pre-initialized
 var usersIndex map[string]User = map[string]User{} // maps username to user struct
+var usersIndexLock sync.Mutex = sync.Mutex{}
 
 func (u *User) GetAllJobs() []*Job {
 	u.jobsLock.Lock()
@@ -80,10 +79,19 @@ func GetIndexedUser(username string, password string) *User {
 	return &user
 }
 
-// Should be called before server is started to avoid race conditions
 func AddUser(username, token string) {
+	usersIndexLock.Lock()
+
 	usersIndex[username] = User{
 		token: token,
 		jobs:  map[string]*Job{},
 	}
+
+	usersIndexLock.Unlock()
+}
+
+func ClearUsers() {
+	usersIndexLock.Lock()
+	usersIndex = map[string]User{}
+	usersIndexLock.Unlock()
 }
