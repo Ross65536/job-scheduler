@@ -117,9 +117,9 @@ func TestCreateJobUnhappyPath(t *testing.T) {
 	defer server.Close()
 
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
-	resp := makeRequestWithHttpBasic(t, username, token, "POST", server.URL+"/api/jobs", command, 409)
+	resp := makeRequestWithHttpBasic(t, username, token, "POST", server.URL+"/api/jobs", command, 500)
 	jsonResponse := parseJsonObj(t, resp)
-	assertEquals(t, jsonResponse["status"], 409.0)
+	assertEquals(t, jsonResponse["status"], 500.0)
 }
 
 func TestInvalidAuth(t *testing.T) {
