@@ -25,7 +25,6 @@ func (u *User) GetAllJobs() []*Job {
 	jobsList := make([]*Job, 0, len(u.jobs))
 
 	for _, value := range u.jobs {
-		// TODO add Job sync code
 		jobsList = append(jobsList, value)
 	}
 	u.jobsLock.Unlock()

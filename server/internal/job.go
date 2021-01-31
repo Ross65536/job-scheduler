@@ -5,21 +5,21 @@ import "time"
 type JobStatus string
 
 const (
-	Running JobStatus = "RUNNING"
-	Stopped JobStatus = "STOPPED"
-	Killed  JobStatus = "KILLED"
+	running JobStatus = "RUNNING"
+	stopped JobStatus = "STOPPED"
+	killed  JobStatus = "KILLED"
 )
 
 type Job struct {
-	ID        string     `json:"id"`         // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
-	Pid       int        `json:"pid"`        // Unix process ID
-	Command   []string   `json:"command"`    // command name + argv, NOT EMPTY
-	Status    JobStatus  `json:"status"`     // status of job, one of `RUNNING`, `KILLED` or `FINISHED`, NOT EMPTY
-	Stdout    string     `json:"stdout"`     // process stdout
-	Stderr    string     `json:"stderr"`     // process stderr
-	ExitCode  *int       `json:"exit_code"`  // process exit code
-	CreatedAt time.Time  `json:"created_at"` // time when job started, NOT EMPTY
-	StoppedAt *time.Time `json:"stopped_at"` // time when job is killed or has finished
+	id        string     // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
+	pid       int        // Unix process ID
+	command   []string   // command name + argv, NOT EMPTY
+	status    JobStatus  // status of job, one of `RUNNING`, `KILLED` or `FINISHED`, NOT EMPTY
+	stdout    string     // process stdout
+	stderr    string     // process stderr
+	exitCode  *int       // process exit code
+	createdAt time.Time  // time when job started, NOT EMPTY
+	stoppedAt *time.Time // time when job is killed or has finished
 }
 
 func CreateJob(id string, command []string, pid int) *Job {
@@ -27,11 +27,26 @@ func CreateJob(id string, command []string, pid int) *Job {
 		id,
 		pid,
 		command,
-		Running,
+		running,
 		"",
 		"",
 		nil,
 		time.Now(),
 		nil,
 	}
+}
+
+func (j *Job) AsMap() map[string]interface{} {
+	m := map[string]interface{}{
+		"id":         j.id,
+		"command":    j.command,
+		"status":     j.status,
+		"stdout":     j.stdout,
+		"stderr":     j.stderr,
+		"exit_code":  j.exitCode,
+		"stopped_at": j.stoppedAt,
+		"created_at": j.createdAt,
+	}
+
+	return m
 }

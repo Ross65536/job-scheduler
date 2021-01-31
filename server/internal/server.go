@@ -36,6 +36,7 @@ func authMiddleware(next http.Handler) http.Handler {
 			if user := GetIndexedUser(username, password); user != nil {
 				ctx := context.WithValue(r.Context(), userCtxKey, user)
 				next.ServeHTTP(w, r.WithContext(ctx))
+				return
 			}
 
 			log.Print("Client supplied invalid username or password")
@@ -107,7 +108,7 @@ func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) 
 }
 
 func getJob(w http.ResponseWriter, r *http.Request) {
-	job := getContextJob(r)
+	job := getContextJob(r).AsMap()
 
 	writeJSON(w, http.StatusOK, job)
 }
@@ -120,12 +121,23 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+var listJobFields = []string{"id", "status", "created_at", "command", "stopped_at"}
+
 func getJobs(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
 
 	jobs := user.GetAllJobs()
-	writeJSON(w, http.StatusOK, jobs)
+	jobViews := make([]map[string]interface{}, 0, len(jobs))
+
+	for _, v := range jobs {
+		view := MapSubmap(v.AsMap(), listJobFields...)
+		jobViews = append(jobViews, view)
+	}
+
+	writeJSON(w, http.StatusOK, jobViews)
 }
+
+var createdJobFields = []string{"id", "status", "created_at", "command"}
 
 func createJob(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
@@ -136,7 +148,6 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := user.CreateJob(createJob.Command, -1)
-
-	writeJSON(w, http.StatusCreated, job)
+	job := user.CreateJob(createJob.Command, -1).AsMap()
+	writeJSON(w, http.StatusCreated, MapSubmap(job, createdJobFields...))
 }
