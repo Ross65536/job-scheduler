@@ -2,6 +2,8 @@
 
 ## Instructions
 
+Must be run inside the `server` folder
+
 - Running:
 ```shell
 go run main.go
