@@ -25,7 +25,7 @@ type Job struct {
 	stderr    []byte     // process stderr
 	exitCode  *int       // process exit code
 	createdAt time.Time  // time when job started, NOT EMPTY
-	stoppedAt *time.Time // time when job is killed or has finished
+	stoppedAt *time.Time // time when job is stopped, killed or has finished
 	lock      sync.Mutex
 }
 
@@ -94,12 +94,6 @@ func (j *Job) IsStopping() bool {
 	return running
 }
 
-func (j *Job) endJob(status JobStatus) {
-	j.status = status
-	t := time.Now()
-	j.stoppedAt = &t
-}
-
 func (j *Job) StoppingJob() {
 	j.lock.Lock()
 
@@ -108,6 +102,12 @@ func (j *Job) StoppingJob() {
 	}
 
 	j.lock.Unlock()
+}
+
+func (j *Job) endJob(status JobStatus) {
+	j.status = status
+	t := time.Now()
+	j.stoppedAt = &t
 }
 
 func (j *Job) StopJob(normalStop bool) {
