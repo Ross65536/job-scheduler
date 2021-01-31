@@ -2,7 +2,9 @@ package internal
 
 import (
 	"crypto/subtle"
-	"time"
+	"log"
+
+	"github.com/google/uuid"
 )
 
 type User struct {
@@ -11,6 +13,8 @@ type User struct {
 	// Username string, // not necessary, already stored in the index
 	// Password string, // not used, would be stored as hash using BCrypt
 }
+
+var usersIndex map[string]User // maps username to user struct
 
 func (u *User) GetAllJobs() []Job {
 	jobsList := make([]Job, 0, len(u.jobs))
@@ -22,15 +26,27 @@ func (u *User) GetAllJobs() []Job {
 	return jobsList
 }
 
-func (u *User) CreateJob(command []string) *Job {
-	id := "1"
+func generateNewID(keys map[string]Job) string {
+	for i := 0; i < 1000; i++ {
+		id := uuid.NewString()
+		if _, ok := keys[id]; !ok {
+			return id
+		}
+	}
 
-	job := MakeJob(id, command, -1)
+	// in practice it shouldn't fail unless there is some logic error
+	log.Panic("Failed to generate UUID")
+	return "" // not reached
+}
+
+func (u *User) CreateJob(command []string, pid int) *Job {
+	id := generateNewID(u.jobs)
+
+	job := MakeJob(id, command, pid)
+	u.jobs[id] = job
 
 	return &job
 }
-
-var usersIndex map[string]User // maps username to user struct
 
 func GetIndexedUser(username string, password string) *User {
 	user, ok := usersIndex[username]
@@ -50,19 +66,11 @@ func InitializeUsers() {
 	usersIndex = map[string]User{
 		"user1": User{
 			token: "1234",
-			jobs: map[string]Job{
-				"1": Job{
-					"1",
-					-1,
-					[]string{"ls"},
-					Running,
-					"",
-					"",
-					nil,
-					time.Time{},
-					nil,
-				},
-			},
+			jobs:  map[string]Job{},
+		},
+		"user2": User{
+			token: "1234",
+			jobs:  map[string]Job{},
 		},
 	}
 }

@@ -117,7 +117,7 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := user.CreateJob(createJob.Command)
+	job := user.CreateJob(createJob.Command, -1)
 
 	writeJSON(w, http.StatusCreated, job)
 }
