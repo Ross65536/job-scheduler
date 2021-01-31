@@ -148,6 +148,8 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := user.CreateJob(createJob.Command, -1).AsMap()
-	writeJSON(w, http.StatusCreated, MapSubmap(job, createdJobFields...))
+	job := CreateJob(createJob.Command, 1)
+	user.AddJob(job)
+
+	writeJSON(w, http.StatusCreated, MapSubmap(job.AsMap(), createdJobFields...))
 }

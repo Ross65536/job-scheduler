@@ -57,15 +57,14 @@ func generateNewID(keys map[string]*Job) string {
 	return "" // not reached
 }
 
-func (u *User) CreateJob(command []string, pid int) *Job {
+// will modify job argument and return it's ID
+func (u *User) AddJob(job *Job) {
 	u.jobsLock.Lock()
 	id := generateNewID(u.jobs)
 
-	job := CreateJob(id, command, pid)
+	job.SetId(id)
 	u.jobs[id] = job
 	u.jobsLock.Unlock()
-
-	return job
 }
 
 func GetIndexedUser(username string, password string) *User {

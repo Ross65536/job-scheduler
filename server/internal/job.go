@@ -26,9 +26,9 @@ type Job struct {
 	lock      sync.Mutex
 }
 
-func CreateJob(id string, command []string, pid int) *Job {
+func CreateJob(command []string, pid int) *Job {
 	return &Job{
-		id,
+		"",
 		pid,
 		command,
 		running,
@@ -41,18 +41,33 @@ func CreateJob(id string, command []string, pid int) *Job {
 	}
 }
 
+func (j *Job) SetId(id string) {
+	j.lock.Lock()
+	j.id = id
+	j.lock.Unlock()
+}
+
 func (j *Job) AsMap() map[string]interface{} {
 	j.lock.Lock()
 
 	m := map[string]interface{}{
 		"id":         j.id,
-		"command":    j.command,
 		"status":     j.status,
 		"stdout":     j.stdout,
 		"stderr":     j.stderr,
-		"exit_code":  j.exitCode,
-		"stopped_at": j.stoppedAt,
 		"created_at": j.createdAt,
+	}
+
+	commandDup := make([]string, len(j.command))
+	copy(commandDup, j.command)
+	m["command"] = commandDup
+
+	if j.exitCode != nil {
+		m["exit_code"] = *j.exitCode
+	}
+
+	if j.stoppedAt != nil {
+		m["stopped_at"] = *j.stoppedAt
 	}
 
 	j.lock.Unlock()
