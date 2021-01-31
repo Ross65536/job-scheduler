@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// User's username is already stored in the 'usersIndex' keys
+// User username is already stored in the 'usersIndex' keys
 type User struct {
 	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in base64 format
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
@@ -55,7 +55,7 @@ func generateNewID(keys map[string]*Job) string {
 	return "" // not reached
 }
 
-// will modify job argument and return it's ID
+// AddJob will modify job argument and return it's ID
 func (u *User) AddJob(job *Job) {
 	u.jobsLock.Lock()
 	id := generateNewID(u.jobs)
