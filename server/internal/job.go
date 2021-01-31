@@ -22,8 +22,8 @@ type Job struct {
 	StoppedAt *time.Time `json:"stopped_at"` // time when job is killed or has finished
 }
 
-func MakeJob(id string, command []string, pid int) Job {
-	return Job{
+func CreateJob(id string, command []string, pid int) *Job {
+	return &Job{
 		id,
 		pid,
 		command,

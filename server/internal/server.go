@@ -21,6 +21,7 @@ func StartServer() {
 
 	myRouter.HandleFunc("/api/jobs", getJobs).Methods("GET")
 	myRouter.HandleFunc("/api/jobs", createJob).Methods("POST")
+	myRouter.HandleFunc("/api/jobs/{id}", getJob).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
@@ -79,6 +80,19 @@ func writeHTTPError(w http.ResponseWriter, statusCode int, errorMessage string) 
 	}
 
 	writeJSON(w, statusCode, error)
+}
+
+func getJob(w http.ResponseWriter, r *http.Request) {
+	user := getUser(r)
+	id := mux.Vars(r)["id"]
+
+	job := user.GetJob(id)
+	if job == nil {
+		writeHTTPError(w, http.StatusNotFound, "invalid ID")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, job)
 }
 
 func getJobs(w http.ResponseWriter, r *http.Request) {
