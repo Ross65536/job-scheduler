@@ -11,7 +11,7 @@ The commands and filepaths specified must be absolute paths or in $PATH.
 
 The backend can start, show status and stop a job. A job is a Unix process.
 
-A job can have the status of `RUNNING`, `KILLED` or `FINISHED`.
+A job can have the status of `RUNNING`, `FINISHED`, `STOPPING`, `STOPPED` or `KILLED`.
 
 A job belongs to a user that started it. A user can only view or modify his own jobs.
 
@@ -25,9 +25,8 @@ The state will keep track of started jobs and their results.
 ```golang
 type Job struct {
   Id string, // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
-  Pid int,  // Unix process ID
   Command []string, // command name + argv, NOT EMPTY
-  Status string, // status of job, one of `RUNNING`, `KILLED` or `FINISHED`, NOT EMPTY
+  Status string, // status of job
   Stdout string, // process stdout 
   Stderr string, // process stderr 
   ExitCode int, // process exit code
@@ -100,7 +99,7 @@ var usersIndex map[string][User] // maps username to user struct
   When a job is created the job status is added to the state with `RUNNING` status and the ID 
   is returned to the client. 
   When the job is finished normally (with exit 0 or otherwise) the state is updated 
-  with `FINISHED` status and the `exit_code` is written to the state, but when a job is stopped by the user the status is set as `KILLED`.
+  with `FINISHED` status and the `exit_code` is written to the state, but when a job is stopped by the user the status is set as `STOPPED`.
   While the job is running, the spawned thread waits on the overridden `stdout` pipe, as the bytes arrive they are appended to the state, same for `stderr`, when both pipes are closed the thread will wait on the child's PID for it to finish.
   The job belongs to the user that created it (which can be obtained from the API token), when the job is created it is placed in `User.Jobs` under the correct username for `usersIndex`.
 
@@ -168,14 +167,14 @@ var usersIndex map[string][User] // maps username to user struct
   - 404: when invalid ID
 
   Stop job if it belongs to user.
-  The backend will send a `SIGTERM` signal to the child to stop. 
+  The backend will send a `SIGTERM` signal to the child to stop it and set the status to `STOPPING` if the job's 
+  status is `RUNNING`, if the status is already `RUNNING` the `SIGKILL` signal will be sent instead.
   The user must then query using the show status to see when it is actually stopped. 
-  The signal is only sent when the job has `RUNNING` status. 
-  Given that a job might hang it could be possible to add a param to specify whether to use `SIGKILL`.
 
 The backend can return errors like 404, 409, these can have a body describing the error with the format:
 ```javascript
 {
+  "status": 500,
   "message": "Something went wrong" // optional
 }
 ```
