@@ -17,15 +17,15 @@ const (
 )
 
 type Job struct {
-	id        string      // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
-	proc      *os.Process // Unix process ID
-	command   []string    // command name + argv, NOT EMPTY
-	status    JobStatus   // status of job, NOT EMPTY
-	stdout    []byte      // process stdout
-	stderr    []byte      // process stderr
-	exitCode  *int        // process exit code
-	createdAt time.Time   // time when job started, NOT EMPTY
-	stoppedAt *time.Time  // time when job is killed or has finished
+	id        string // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
+	proc      *os.Process
+	command   []string   // command name + argv, NOT EMPTY
+	status    JobStatus  // status of job, NOT EMPTY
+	stdout    []byte     // process stdout
+	stderr    []byte     // process stderr
+	exitCode  *int       // process exit code
+	createdAt time.Time  // time when job started, NOT EMPTY
+	stoppedAt *time.Time // time when job is killed or has finished
 	lock      sync.Mutex
 }
 
