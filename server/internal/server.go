@@ -13,17 +13,22 @@ import (
 
 const (
 	userCtxKey = "user"
+	jobCtxKey  = "job"
 )
 
 func StartServer() {
-	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.Use(authMiddleware)
+	router := mux.NewRouter().StrictSlash(true)
+	router.Use(authMiddleware)
 
-	myRouter.HandleFunc("/api/jobs", getJobs).Methods("GET")
-	myRouter.HandleFunc("/api/jobs", createJob).Methods("POST")
-	myRouter.HandleFunc("/api/jobs/{id}", getJob).Methods("GET")
+	topRouter := router.PathPrefix("/api/jobs").Subrouter()
+	topRouter.HandleFunc("", getJobs).Methods("GET")
+	topRouter.HandleFunc("", createJob).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
+	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
+	jobsRouter.Use(jobIdMiddleware)
+	jobsRouter.HandleFunc("", getJob).Methods("GET")
+
+	log.Fatal(http.ListenAndServe(":10000", router))
 }
 
 func validateUserCredentials(w http.ResponseWriter, r *http.Request) *User {
@@ -41,6 +46,22 @@ func validateUserCredentials(w http.ResponseWriter, r *http.Request) *User {
 	return nil
 }
 
+func jobIdMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := getContextUser(r)
+		id := mux.Vars(r)["id"]
+
+		job := user.GetJob(id)
+		if job == nil {
+			writeHTTPError(w, http.StatusNotFound, "invalid ID")
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), jobCtxKey, job)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserCredentials(w, r)
@@ -53,7 +74,7 @@ func authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func getUser(r *http.Request) *User {
+func getContextUser(r *http.Request) *User {
 	v := r.Context().Value(userCtxKey)
 	if v == nil {
 		log.Panic("Logic error")
@@ -65,6 +86,20 @@ func getUser(r *http.Request) *User {
 	}
 
 	return user
+}
+
+func getContextJob(r *http.Request) *Job {
+	v := r.Context().Value(jobCtxKey)
+	if v == nil {
+		log.Panic("Logic error")
+	}
+
+	job, ok := v.(*Job)
+	if !ok {
+		log.Panic("Logic error")
+	}
+
+	return job
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
@@ -83,20 +118,13 @@ func writeHTTPError(w http.ResponseWriter, statusCode int, errorMessage string) 
 }
 
 func getJob(w http.ResponseWriter, r *http.Request) {
-	user := getUser(r)
-	id := mux.Vars(r)["id"]
-
-	job := user.GetJob(id)
-	if job == nil {
-		writeHTTPError(w, http.StatusNotFound, "invalid ID")
-		return
-	}
+	job := getContextJob(r)
 
 	writeJSON(w, http.StatusOK, job)
 }
 
 func getJobs(w http.ResponseWriter, r *http.Request) {
-	user := getUser(r)
+	user := getContextUser(r)
 
 	jobs := user.GetAllJobs()
 	writeJSON(w, http.StatusOK, jobs)
@@ -121,7 +149,7 @@ func (j *jobCreateModel) isValid() bool {
 }
 
 func createJob(w http.ResponseWriter, r *http.Request) {
-	user := getUser(r)
+	user := getContextUser(r)
 
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	var createJob jobCreateModel
