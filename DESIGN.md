@@ -16,7 +16,7 @@ A job can have the status of
 - `FINISHED`: job finished normally
 - `STOPPING`: user tried to stop the job
 - `STOPPED`: job stopped by user (in practice a best case guess is taken if it was actually the user that stopped the process)
-- `KILLED`: job stopped by system
+- `KILLED`: job stopped by the system
 
 A job belongs to a user that started it. A user can only view or modify his own jobs.
 
