@@ -66,7 +66,10 @@ func (u *User) AddJob(job *Job) {
 }
 
 func GetIndexedUser(username string, password string) *User {
+	usersIndexLock.Lock()
 	user, ok := usersIndex[username]
+	usersIndexLock.Unlock()
+
 	if !ok {
 		return nil
 	}
