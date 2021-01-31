@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Will zig zag between sleeping and print to both stdout and stderr
+
+
 steps="${1:-5}"
 echo "sleeping for $steps steps"
 
