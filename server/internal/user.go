@@ -12,8 +12,6 @@ type User struct {
 	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in hex or base64 format
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
 	jobsLock sync.Mutex
-	// Username string, // not necessary, already stored in the index
-	// Password string, // not used, would be stored as hash using BCrypt
 }
 
 // there is no need to synchronize access with a mutex to this index,
