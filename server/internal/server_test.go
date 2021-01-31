@@ -71,6 +71,7 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
+// implicitly also tests authentication
 func TestCreateJobHappyPath(t *testing.T) {
 	username := "user1"
 	token := "1234"
@@ -103,5 +104,33 @@ func TestCreateJobHappyPath(t *testing.T) {
 
 		return true
 	})
+}
 
+func TestCreateJobUnhappyPath(t *testing.T) {
+	username := "user1"
+	token := "1234"
+	internal.AddUser(username, token)
+	defer internal.ClearUsers()
+
+	router := internal.CreateRouter()
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
+	resp := makeRequestWithHttpBasic(t, username, token, "POST", server.URL+"/api/jobs", command, 409)
+	jsonResponse := parseJsonObj(t, resp)
+	assertEquals(t, jsonResponse["status"], 409.0)
+}
+
+func TestInvalidAuth(t *testing.T) {
+	username := "user1"
+	token := "1234"
+	internal.AddUser(username, token)
+	defer internal.ClearUsers()
+
+	router := internal.CreateRouter()
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	makeRequestWithHttpBasic(t, username, token+"invalid", "GET", server.URL+"/api/jobs", "", 401)
 }
