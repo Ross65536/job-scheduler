@@ -22,6 +22,14 @@ func (u *User) GetAllJobs() []Job {
 	return jobsList
 }
 
+func (u *User) CreateJob(command []string) *Job {
+	id := "1"
+
+	job := MakeJob(id, command, -1)
+
+	return &job
+}
+
 var usersIndex map[string]User // maps username to user struct
 
 func GetIndexedUser(username string, password string) *User {
@@ -50,9 +58,9 @@ func InitializeUsers() {
 					Running,
 					"",
 					"",
-					0,
+					nil,
 					time.Time{},
-					time.Time{},
+					nil,
 				},
 			},
 		},
