@@ -6,3 +6,5 @@ Consists of a:
 
 - Server: [README](./server)
 - Client: [README](./client)
+
+There are useful scripts in `scripts` for testing the behaviour of system.

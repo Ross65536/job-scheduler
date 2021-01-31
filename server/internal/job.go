@@ -135,8 +135,9 @@ func (j *Job) AsMap() map[string]interface{} {
 	j.lock.Lock()
 
 	m := map[string]interface{}{
-		"id":         j.id,
-		"status":     j.status,
+		"id":     j.id,
+		"status": j.status,
+		// TODO: remove/escape/replace stdout/stderr characters not corresponding to a utf8 rune
 		"stdout":     string(j.stdout),
 		"stderr":     string(j.stderr),
 		"created_at": j.createdAt,
