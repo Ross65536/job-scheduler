@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"syscall"
 )
 
 const (
@@ -83,5 +84,17 @@ func SpawnJob(command []string, c chan<- *Job) {
 		log.Printf("Something went wrong with process execution or termination %s %s", command, exitErr)
 		job.StopJob(JobKilled)
 	}
+}
 
+func StopJob(job *Job) bool {
+	if job.GetStatus() != JobRunning {
+		return true
+	}
+
+	if err := job.GetProcess().Signal(syscall.SIGTERM); err != nil {
+		log.Printf("Something went wrong sending a signal %s", err)
+		return false
+	}
+
+	return true
 }

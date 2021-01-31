@@ -18,6 +18,8 @@ func StartServer() {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(authMiddleware)
 
+	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
+
 	topRouter := router.PathPrefix("/api/jobs").Subrouter()
 	topRouter.HandleFunc("", getJobs).Methods("GET")
 	topRouter.HandleFunc("", createJob).Methods("POST")
@@ -116,9 +118,12 @@ func getJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func stopJob(w http.ResponseWriter, r *http.Request) {
-	_ = getContextJob(r)
+	job := getContextJob(r)
 
-	// TODO
+	if ok := StopJob(job); !ok {
+		writeJSONError(w, http.StatusInternalServerError, "Failed to stop job")
+		return
+	}
 
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -9,7 +9,7 @@ import (
 type JobStatus string
 
 const (
-	jobRunning  JobStatus = "RUNNING"
+	JobRunning  JobStatus = "RUNNING"
 	JobFinished JobStatus = "FINISHED"
 	JobStopped  JobStatus = "STOPPED"
 	JobKilled   JobStatus = "KILLED"
@@ -33,7 +33,7 @@ func CreateJob(command []string, proc *os.Process) *Job {
 		"",
 		proc,
 		command,
-		jobRunning,
+		JobRunning,
 		[]byte{},
 		[]byte{},
 		nil,
@@ -41,6 +41,22 @@ func CreateJob(command []string, proc *os.Process) *Job {
 		nil,
 		sync.Mutex{},
 	}
+}
+
+func (j *Job) GetProcess() *os.Process {
+	j.lock.Lock()
+	proc := j.proc
+	j.lock.Unlock()
+
+	return proc
+}
+
+func (j *Job) GetStatus() JobStatus {
+	j.lock.Lock()
+	status := j.status
+	j.lock.Unlock()
+
+	return status
 }
 
 func (j *Job) SetId(id string) {
