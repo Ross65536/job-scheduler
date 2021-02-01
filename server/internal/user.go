@@ -66,6 +66,8 @@ func (u *User) AddJob(job *Job) {
 }
 
 func GetIndexedUser(username string, password string) *User {
+	// TODO: either remove the lock, assuming that writes only happen during server initialization
+	// or implement a readers-writer lock
 	usersIndexLock.Lock()
 	user, ok := usersIndex[username]
 	usersIndexLock.Unlock()
