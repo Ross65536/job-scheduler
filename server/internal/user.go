@@ -15,8 +15,13 @@ type User struct {
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
 }
 
-var usersIndexLock = sync.RWMutex{} // synchronizes access to the 'usersIndex' global state
-var usersIndex = map[string]*User{} // maps username to user struct
+var state = struct {
+	usersIndexLock sync.RWMutex     // synchronizes access to the 'usersIndex' global state
+	usersIndex     map[string]*User // maps username to user struct
+}{
+	sync.RWMutex{},
+	map[string]*User{},
+}
 
 func (u *User) GetAllJobs() []*Job {
 	u.jobsLock.RLock()
@@ -77,10 +82,10 @@ func (u *User) AddJob(jobBuilder func(id string) *Job) (*Job, error) {
 }
 
 func GetIndexedUser(username string) *User {
-	usersIndexLock.RLock()
-	defer usersIndexLock.RUnlock()
+	state.usersIndexLock.RLock()
+	defer state.usersIndexLock.RUnlock()
 
-	if user, ok := usersIndex[username]; ok {
+	if user, ok := state.usersIndex[username]; ok {
 		return user
 	}
 
@@ -88,19 +93,19 @@ func GetIndexedUser(username string) *User {
 }
 
 func AddUser(username, token string) {
-	usersIndexLock.Lock()
+	state.usersIndexLock.Lock()
 
-	usersIndex[username] = &User{
+	state.usersIndex[username] = &User{
 		username: username,
 		token:    token,
 		jobs:     map[string]*Job{},
 	}
 
-	usersIndexLock.Unlock()
+	state.usersIndexLock.Unlock()
 }
 
 func ClearUsers() {
-	usersIndexLock.Lock()
-	usersIndex = map[string]*User{}
-	usersIndexLock.Unlock()
+	state.usersIndexLock.Lock()
+	state.usersIndex = map[string]*User{}
+	state.usersIndexLock.Unlock()
 }
