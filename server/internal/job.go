@@ -123,29 +123,29 @@ func (j *Job) MarkAsFinished(exitCode int) {
 	j.exitCode = &exitCode
 }
 
-func (j *Job) AsMap() map[string]interface{} {
+func (j *Job) AsView() JobViewFull {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
-	m := map[string]interface{}{
-		"id":     j.id,
-		"status": j.status,
-		// TODO: remove/escape/replace stdout/stderr characters not corresponding to a utf8 rune
-		"stdout":     string(j.stdout),
-		"stderr":     string(j.stderr),
-		"created_at": j.createdAt,
-	}
-
 	commandDup := make([]string, len(j.command))
 	copy(commandDup, j.command)
-	m["command"] = commandDup
 
-	if j.exitCode != nil {
-		m["exit_code"] = *j.exitCode
+	m := JobViewFull{
+		JobViewPartial: JobViewPartial{
+			JobViewCommand: JobViewCommand{
+				Command: commandDup,
+			},
+			ID:        j.id,
+			Status:    string(j.status),
+			CreatedAt: j.createdAt,
+		},
+		Stdout:   string(j.stdout),
+		Stderr:   string(j.stderr),
+		ExitCode: j.exitCode,
 	}
 
 	if !j.stoppedAt.IsZero() {
-		m["stopped_at"] = j.stoppedAt
+		m.StoppedAt = &j.stoppedAt
 	}
 
 	return m

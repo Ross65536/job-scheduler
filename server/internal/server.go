@@ -123,12 +123,10 @@ func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) 
 	writeJSON(w, statusCode, error)
 }
 
-var showJobFields = []string{"id", "status", "created_at", "exit_code", "command", "stopped_at", "stdout", "stderr"}
-
 func getJob(w http.ResponseWriter, r *http.Request) {
 	job := getContextJob(r)
 
-	writeJSON(w, http.StatusOK, MapSubmap(job.AsMap(), showJobFields...))
+	writeJSON(w, http.StatusOK, job.AsView())
 }
 
 func stopJob(w http.ResponseWriter, r *http.Request) {
@@ -143,17 +141,14 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-var listJobFields = []string{"id", "status", "created_at", "exit_code", "command", "stopped_at"}
-
 func getJobs(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
 
 	jobs := user.GetAllJobs()
-	jobViews := make([]map[string]interface{}, 0, len(jobs))
+	jobViews := make([]JobViewPartial, 0, len(jobs))
 
 	for _, v := range jobs {
-		view := MapSubmap(v.AsMap(), listJobFields...)
-		jobViews = append(jobViews, view)
+		jobViews = append(jobViews, v.AsView().JobViewPartial)
 	}
 
 	writeJSON(w, http.StatusOK, jobViews)
@@ -183,9 +178,7 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 		return nil, err
 	}
 
-	createJob := struct {
-		Command []string
-	}{}
+	createJob := JobViewCommand{}
 	// var createJob JobCreateModel
 	if err := json.Unmarshal(reqBody, &createJob); err != nil {
 		return nil, err
@@ -197,8 +190,6 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 
 	return createJob.Command, nil
 }
-
-var createdJobFields = []string{"id", "status", "created_at", "command"}
 
 func createJob(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
@@ -214,6 +205,6 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
 	} else {
 		user.AddJob(job)
-		writeJSON(w, http.StatusCreated, MapSubmap(job.AsMap(), createdJobFields...))
+		writeJSON(w, http.StatusCreated, job.AsView().JobViewPartial)
 	}
 }
