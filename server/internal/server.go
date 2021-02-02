@@ -205,14 +205,11 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ch := make(chan SpawnJobResult, 1)
-	go SpawnJob(user, command, ch)
-
-	if spawnResult := <-ch; spawnResult.Err != nil {
-		log.Printf("Failed to start job %s, because: %s", command, spawnResult.Err)
+	if job, err := SpawnJob(user, command); err != nil {
+		log.Printf("Failed to start job %s, because: %s", command, err)
 		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
 	} else {
-		user.AddJob(spawnResult.Job)
-		writeJSON(w, http.StatusCreated, MapSubmap(spawnResult.Job.AsMap(), createdJobFields...))
+		user.AddJob(job)
+		writeJSON(w, http.StatusCreated, MapSubmap(job.AsMap(), createdJobFields...))
 	}
 }

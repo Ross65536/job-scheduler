@@ -40,29 +40,7 @@ type SpawnJobResult struct {
 	Err error
 }
 
-func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
-	cmd := exec.Command(command[0], command[1:]...)
-
-	stdout, stdoutErr := cmd.StdoutPipe()
-	if stdoutErr != nil {
-		ch <- SpawnJobResult{nil, stdoutErr}
-		return
-	}
-
-	stderr, stderrErr := cmd.StderrPipe()
-	if stderrErr != nil {
-		ch <- SpawnJobResult{nil, stderrErr}
-		return
-	}
-
-	if startErr := cmd.Start(); startErr != nil {
-		ch <- SpawnJobResult{nil, startErr}
-		return
-	}
-
-	job := CreateJob(command, cmd.Process)
-	ch <- SpawnJobResult{job, nil}
-
+func waitJob(job *Job, cmd *exec.Cmd, stdout, stderr io.Reader) {
 	waiter := make(chan error, 1)
 	go readPipe(job.UpdateStdout, stdout, waiter)
 	go readPipe(job.UpdateStderr, stderr, waiter)
@@ -89,9 +67,32 @@ func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
 		}
 
 	default:
-		log.Printf("Something went wrong with process execution or termination %s %s", command, exitErr)
+		log.Printf("Something went wrong with process execution or termination %s %s", cmd.Path, exitErr)
 		job.MarkAsKilled()
 	}
+}
+
+func SpawnJob(user *User, command []string) (*Job, error) {
+	cmd := exec.Command(command[0], command[1:]...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	if startErr := cmd.Start(); startErr != nil {
+		return nil, err
+	}
+
+	job := CreateJob(command, cmd.Process)
+	go waitJob(job, cmd, stdout, stderr)
+
+	return job, nil
 }
 
 func StopJob(job *Job) error {
