@@ -28,7 +28,7 @@ func assertNotError(t *testing.T, err error) {
 
 var client = http.Client{}
 
-func makeRequestWithHttpBasic(t *testing.T, basicUsername string, basicPassword string, method string, url string, body string, expectedStatus int) *http.Response {
+func makeRequestWithHttpBasic(t *testing.T, basicUsername, basicPassword, method, url, body string, expectedStatus int) *http.Response {
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = bytes.NewBuffer([]byte(body))
