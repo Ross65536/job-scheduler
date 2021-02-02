@@ -12,34 +12,34 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateRouter() http.Handler {
+func CreateRouter(state *State) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
 
 	topRouter := router.PathPrefix("/api/jobs").Subrouter()
-	topRouter.HandleFunc("", authMiddleware(getJobs)).Methods("GET")
-	topRouter.HandleFunc("", authMiddleware(createJob)).Methods("POST")
+	topRouter.HandleFunc("", authMiddleware(state, getJobs)).Methods("GET")
+	topRouter.HandleFunc("", authMiddleware(state, createJob)).Methods("POST")
 
 	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
-	jobsRouter.HandleFunc("", authMiddleware(jobIDMiddleware(getJob))).Methods("GET")
-	jobsRouter.HandleFunc("", authMiddleware(jobIDMiddleware(stopJob))).Methods("DELETE")
+	jobsRouter.HandleFunc("", authMiddleware(state, jobIDMiddleware(getJob))).Methods("GET")
+	jobsRouter.HandleFunc("", authMiddleware(state, jobIDMiddleware(stopJob))).Methods("DELETE")
 
 	return router
 }
 
-func StartServer() {
-	router := CreateRouter()
+func StartServer(state *State) {
+	router := CreateRouter(state)
 
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
 
-func checkAuth(r *http.Request) (*User, error) {
+func checkAuth(state *State, r *http.Request) (*User, error) {
 	username, password, ok := r.BasicAuth()
 	if !ok {
 		return nil, errors.New("Request isn't using HTTP Basic")
 	}
 
-	user := GetIndexedUser(username)
+	user := state.GetIndexedUser(username)
 	if user == nil {
 		return nil, errors.New("Invalid username")
 	}
@@ -51,9 +51,9 @@ func checkAuth(r *http.Request) (*User, error) {
 	return user, nil
 }
 
-func authMiddleware(next func(http.ResponseWriter, *http.Request, *User)) func(w http.ResponseWriter, r *http.Request) {
+func authMiddleware(state *State, next func(http.ResponseWriter, *http.Request, *User)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if user, err := checkAuth(r); err != nil {
+		if user, err := checkAuth(state, r); err != nil {
 			log.Printf("Invalid user tried to access API: %s", err)
 			writeJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
 		} else {

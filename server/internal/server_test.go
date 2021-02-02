@@ -83,22 +83,23 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
-func setupTest(basic httpBasic) *httptest.Server {
-	internal.AddUser(basic.username, basic.password)
-	router := internal.CreateRouter()
-	return httptest.NewServer(router)
+func setupTest(basic httpBasic) (*internal.State, *httptest.Server) {
+	state := internal.NewState()
+	state.AddUser(basic.username, basic.password)
+	router := internal.CreateRouter(state)
+	return state, httptest.NewServer(router)
 }
 
-func teardownTest(server *httptest.Server) {
-	internal.ClearUsers()
+func teardownTest(state *internal.State, server *httptest.Server) {
+	state.ClearUsers()
 	server.Close()
 }
 
 func TestCanCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	server := setupTest(basic)
-	defer teardownTest(server)
+	state, server := setupTest(basic)
+	defer teardownTest(state, server)
 
 	command := `{"command": ["ls", "/"]}`
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 201)
@@ -127,8 +128,8 @@ func TestCanCreateJob(t *testing.T) {
 func TestFailToCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	server := setupTest(basic)
-	defer teardownTest(server)
+	state, server := setupTest(basic)
+	defer teardownTest(state, server)
 
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 500)
@@ -139,8 +140,8 @@ func TestFailToCreateJob(t *testing.T) {
 func TestInvalidAuth(t *testing.T) {
 	basic := buildDefaultUser()
 
-	server := setupTest(basic)
-	defer teardownTest(server)
+	state, server := setupTest(basic)
+	defer teardownTest(state, server)
 
 	invalidAuth := httpBasic{
 		username: basic.username,
