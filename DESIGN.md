@@ -173,7 +173,7 @@ var usersIndex map[string][User] // maps username to user struct
 
   Stop job if it belongs to user.
   The backend will send a `SIGTERM` signal to the child to stop it and set the status to `STOPPING` if the job's 
-  status is `RUNNING`, if the status is already `RUNNING` the `SIGKILL` signal will be sent instead.
+  status is `RUNNING`, if the status is already `STOPPING` the `SIGKILL` signal will be sent instead.
   The user must then query using the show status to see when it is actually stopped. 
 
 The backend can return errors like 404, 409, these can have a body describing the error with the format:
