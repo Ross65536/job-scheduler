@@ -3,8 +3,12 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -149,19 +153,54 @@ func getJobs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jobViews)
 }
 
+func isCommandValid(command []string) bool {
+	if command == nil || len(command) < 1 {
+		return false
+	}
+
+	if program := command[0]; len(strings.TrimSpace(program)) == 0 {
+		return false
+	}
+
+	// TODO: add more sanity checks like invalid characters, etc
+
+	return true
+}
+
+func parseJobCreation(r io.Reader) ([]string, error) {
+	reqBody, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	createJob := struct {
+		Command []string
+	}{}
+	// var createJob JobCreateModel
+	if err := json.Unmarshal(reqBody, &createJob); err != nil {
+		return nil, err
+	}
+
+	if !isCommandValid(createJob.Command) {
+		return nil, errors.New("Invalid JSON schema")
+	}
+
+	return createJob.Command, nil
+}
+
 var createdJobFields = []string{"id", "status", "created_at", "command"}
 
 func createJob(w http.ResponseWriter, r *http.Request) {
 	user := getContextUser(r)
 
-	createJob := ParseJobCreation(r.Body)
-	if createJob == nil || !createJob.IsValid() {
+	command, err := parseJobCreation(r.Body)
+	if err != nil {
 		writeJSONError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command' in POST body")
 		return
 	}
 
 	ch := make(chan *Job, 1)
-	go SpawnJob(user, createJob.Command, ch)
+	go SpawnJob(user, command, ch)
 
 	job := <-ch
 	if job == nil {
