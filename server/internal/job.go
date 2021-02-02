@@ -82,7 +82,7 @@ func (j *Job) IsStopping() bool {
 	return j.status == jobStopping
 }
 
-func (j *Job) StoppingJob() {
+func (j *Job) MarkJobAsStopping() {
 	j.lock.Lock()
 
 	if j.status == jobRunning {
@@ -92,28 +92,36 @@ func (j *Job) StoppingJob() {
 	j.lock.Unlock()
 }
 
-func (j *Job) endJob(status JobStatus) {
+func (j *Job) endJobLocked(status JobStatus) {
 	j.status = status
 	t := time.Now()
 	j.stoppedAt = &t
 }
 
-func (j *Job) StopJob(normalStop bool) {
+func (j *Job) MarkJobAsStopped() {
 	j.lock.Lock()
 
-	if normalStop && j.status == jobStopping {
-		j.endJob(jobStopped)
+	if j.status == jobStopping {
+		j.endJobLocked(jobStopped)
 	} else {
-		j.endJob(jobKilled)
+		j.endJobLocked(jobKilled)
 	}
 
 	j.lock.Unlock()
 }
 
-func (j *Job) FinishJob(exitCode int) {
+func (j *Job) MarkJobAsKilled() {
 	j.lock.Lock()
 
-	j.endJob(jobFinished)
+	j.endJobLocked(jobKilled)
+
+	j.lock.Unlock()
+}
+
+func (j *Job) MarkJobAsFinished(exitCode int) {
+	j.lock.Lock()
+
+	j.endJobLocked(jobFinished)
 	j.exitCode = &exitCode
 
 	j.lock.Unlock()
