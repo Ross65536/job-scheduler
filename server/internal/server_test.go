@@ -20,7 +20,7 @@ func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	}
 }
 
-func assertError(t *testing.T, err error) {
+func assertNotError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,12 +35,12 @@ func makeRequestWithHttpBasic(t *testing.T, basicUsername string, basicPassword 
 	}
 
 	req, err := http.NewRequest(method, url, bodyReader)
-	assertError(t, err)
+	assertNotError(t, err)
 
 	req.SetBasicAuth(basicUsername, basicPassword)
 
 	resp, err := client.Do(req)
-	assertError(t, err)
+	assertNotError(t, err)
 
 	if resp.StatusCode != expectedStatus {
 		t.Fatalf("Received non-%d response: %d\n", expectedStatus, resp.StatusCode)
@@ -51,11 +51,11 @@ func makeRequestWithHttpBasic(t *testing.T, basicUsername string, basicPassword 
 
 func parseJsonObj(t *testing.T, resp *http.Response) map[string]interface{} {
 	reqBody, err := ioutil.ReadAll(resp.Body)
-	assertError(t, err)
+	assertNotError(t, err)
 
 	var jsonResponse map[string]interface{}
 	err = json.Unmarshal(reqBody, &jsonResponse)
-	assertError(t, err)
+	assertNotError(t, err)
 
 	return jsonResponse
 }
