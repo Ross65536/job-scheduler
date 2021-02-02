@@ -160,7 +160,7 @@ func getJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func isCommandValid(command []string) bool {
-	if command == nil || len(command) < 1 {
+	if len(command) == 0 {
 		return false
 	}
 
