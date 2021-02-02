@@ -74,7 +74,7 @@ func (j *Job) IsStopping() bool {
 	return j.status == jobStopping
 }
 
-func (j *Job) MarkJobAsStopping() {
+func (j *Job) MarkAsStopping() {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
@@ -88,7 +88,7 @@ func (j *Job) endJobLocked(status JobStatus) {
 	j.stoppedAt = time.Now()
 }
 
-func (j *Job) MarkJobAsStopped() {
+func (j *Job) MarkAsStopped() {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
@@ -99,14 +99,14 @@ func (j *Job) MarkJobAsStopped() {
 	}
 }
 
-func (j *Job) MarkJobAsKilled() {
+func (j *Job) MarkAsKilled() {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
 	j.endJobLocked(jobKilled)
 }
 
-func (j *Job) MarkJobAsFinished(exitCode int) {
+func (j *Job) MarkAsFinished(exitCode int) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 

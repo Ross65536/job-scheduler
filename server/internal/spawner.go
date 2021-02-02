@@ -78,19 +78,19 @@ func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
 
 	switch waitErr := cmd.Wait(); exitErr := waitErr.(type) {
 	case nil:
-		job.MarkJobAsFinished(0)
+		job.MarkAsFinished(0)
 
 	case *exec.ExitError:
 		code := exitErr.ExitCode()
 		if code == -1 { // cannot be -1 because it didn't finish, so it can only be from a signal
-			job.MarkJobAsStopped()
+			job.MarkAsStopped()
 		} else {
-			job.MarkJobAsFinished(code)
+			job.MarkAsFinished(code)
 		}
 
 	default:
 		log.Printf("Something went wrong with process execution or termination %s %s", command, exitErr)
-		job.MarkJobAsKilled()
+		job.MarkAsKilled()
 	}
 }
 
@@ -108,6 +108,6 @@ func StopJob(job *Job) error {
 		return err
 	}
 
-	job.MarkJobAsStopping()
+	job.MarkAsStopping()
 	return nil
 }
