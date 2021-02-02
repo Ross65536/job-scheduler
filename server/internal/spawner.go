@@ -70,12 +70,12 @@ func SpawnJob(user *User, command []string, c chan<- *Job) {
 	<-waiter
 	<-waiter
 
-	switch exitErr := cmd.Wait(); exitErr.(type) {
+	switch waitErr := cmd.Wait(); exitErr := waitErr.(type) {
 	case nil:
 		job.MarkJobAsFinished(0)
 
 	case *exec.ExitError:
-		code := exitErr.(*exec.ExitError).ExitCode()
+		code := exitErr.ExitCode()
 		if code == -1 { // cannot be -1 because it didn't finish, so it can only be from a signal
 			job.MarkJobAsStopped()
 		} else {
