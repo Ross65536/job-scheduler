@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// User username is already stored in the 'usersIndex' keys
 type User struct {
 	username string          // the username
 	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in base64 format
