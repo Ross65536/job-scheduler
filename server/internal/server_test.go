@@ -26,7 +26,7 @@ func assertNotError(t *testing.T, err error) {
 	}
 }
 
-var client http.Client = http.Client{}
+var client = http.Client{}
 
 func makeRequestWithHttpBasic(t *testing.T, basicUsername string, basicPassword string, method string, url string, body string, expectedStatus int) *http.Response {
 	var bodyReader io.Reader
