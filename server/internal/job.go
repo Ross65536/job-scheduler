@@ -31,16 +31,11 @@ type Job struct {
 
 func CreateJob(command []string, proc *os.Process) *Job {
 	return &Job{
-		"",
-		proc,
-		command,
-		jobRunning,
-		[]byte{},
-		[]byte{},
-		nil,
-		time.Now(),
-		nil,
-		sync.Mutex{},
+		id:        "",
+		proc:      proc,
+		command:   command,
+		status:    jobRunning,
+		createdAt: time.Now(),
 	}
 }
 
