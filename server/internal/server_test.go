@@ -94,7 +94,6 @@ func teardownTest(server *httptest.Server) {
 	server.Close()
 }
 
-// implicitly also tests authentication
 func TestCanCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
