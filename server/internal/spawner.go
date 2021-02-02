@@ -35,26 +35,21 @@ func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
 	}
 }
 
-type SpawnJobResult struct {
-	Job *Job
-	Err error
-}
-
 func waitJob(job *Job, cmd *exec.Cmd, stdout, stderr io.Reader) {
-	waiter := make(chan error, 1)
+	waiter := make(chan error, 2)
 	go readPipe(job.UpdateStdout, stdout, waiter)
 	go readPipe(job.UpdateStderr, stderr, waiter)
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < cap(waiter); i++ {
 		select {
-		case pipeErr := <-waiter:
-			if pipeErr != nil {
-				log.Printf("Something went wrong reading from pipe %s", pipeErr)
+		case err := <-waiter:
+			if err != nil {
+				log.Printf("Something went wrong reading from pipe %s", err)
 			}
 		}
 	}
 
-	switch waitErr := cmd.Wait(); exitErr := waitErr.(type) {
+	switch err := cmd.Wait(); exitErr := err.(type) {
 	case nil:
 		job.MarkAsFinished(0)
 
@@ -67,7 +62,7 @@ func waitJob(job *Job, cmd *exec.Cmd, stdout, stderr io.Reader) {
 		}
 
 	default:
-		log.Printf("Something went wrong with process execution or termination %s %s", cmd.Path, exitErr)
+		log.Printf("Something went wrong with process execution or termination %s %s", cmd.Path, err)
 		job.MarkAsKilled()
 	}
 }
@@ -85,7 +80,7 @@ func SpawnJob(user *User, command []string) (*Job, error) {
 		return nil, err
 	}
 
-	if startErr := cmd.Start(); startErr != nil {
+	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
 
