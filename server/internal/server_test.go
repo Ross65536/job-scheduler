@@ -14,6 +14,18 @@ import (
 	"github.com/ros-k/job-manager/server/internal"
 )
 
+type httpBasic struct {
+	username string
+	password string
+}
+
+func buildDefaultUser() httpBasic {
+	return httpBasic{
+		username: "user1",
+		password: "1234",
+	}
+}
+
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	if actual != expected {
 		t.Fatalf("Invalid field, expected %s, was %s", expected, actual)
@@ -28,7 +40,7 @@ func assertNotError(t *testing.T, err error) {
 
 var client = http.Client{}
 
-func makeRequestWithHttpBasic(t *testing.T, basicUsername, basicPassword, method, url, body string, expectedStatus int) *http.Response {
+func makeRequestWithHttpBasic(t *testing.T, basic httpBasic, method, url, body string, expectedStatus int) *http.Response {
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = bytes.NewBuffer([]byte(body))
@@ -37,7 +49,7 @@ func makeRequestWithHttpBasic(t *testing.T, basicUsername, basicPassword, method
 	req, err := http.NewRequest(method, url, bodyReader)
 	assertNotError(t, err)
 
-	req.SetBasicAuth(basicUsername, basicPassword)
+	req.SetBasicAuth(basic.username, basic.password)
 
 	resp, err := client.Do(req)
 	assertNotError(t, err)
@@ -71,26 +83,33 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
-// implicitly also tests authentication
-func TestCreateJobHappyPath(t *testing.T) {
-	username := "user1"
-	token := "1234"
-	internal.AddUser(username, token)
-	defer internal.ClearUsers()
-
+func setupTest(basic httpBasic) *httptest.Server {
+	internal.AddUser(basic.username, basic.password)
 	router := internal.CreateRouter()
-	server := httptest.NewServer(router)
-	defer server.Close()
+	return httptest.NewServer(router)
+}
+
+func teardownTest(server *httptest.Server) {
+	internal.ClearUsers()
+	server.Close()
+}
+
+// implicitly also tests authentication
+func TestCanCreateJob(t *testing.T) {
+	basic := buildDefaultUser()
+
+	server := setupTest(basic)
+	defer teardownTest(server)
 
 	command := `{"command": ["ls", "/"]}`
-	resp := makeRequestWithHttpBasic(t, username, token, "POST", server.URL+"/api/jobs", command, 201)
+	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 201)
 	jsonResponse := parseJsonObj(t, resp)
 	assertEquals(t, jsonResponse["status"], "RUNNING")
 
 	id := jsonResponse["id"].(string)
 
 	limitedWait(t, func() bool {
-		resp = makeRequestWithHttpBasic(t, username, token, "GET", server.URL+"/api/jobs/"+id, "", 200)
+		resp = makeRequestWithHttpBasic(t, basic, "GET", server.URL+"/api/jobs/"+id, "", 200)
 		jsonResponse = parseJsonObj(t, resp)
 		status := jsonResponse["status"].(string)
 		if status != "FINISHED" {
@@ -106,31 +125,28 @@ func TestCreateJobHappyPath(t *testing.T) {
 	})
 }
 
-func TestCreateJobUnhappyPath(t *testing.T) {
-	username := "user1"
-	token := "1234"
-	internal.AddUser(username, token)
-	defer internal.ClearUsers()
+func TestFailToCreateJob(t *testing.T) {
+	basic := buildDefaultUser()
 
-	router := internal.CreateRouter()
-	server := httptest.NewServer(router)
-	defer server.Close()
+	server := setupTest(basic)
+	defer teardownTest(server)
 
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
-	resp := makeRequestWithHttpBasic(t, username, token, "POST", server.URL+"/api/jobs", command, 500)
+	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 500)
 	jsonResponse := parseJsonObj(t, resp)
 	assertEquals(t, jsonResponse["status"], 500.0)
 }
 
 func TestInvalidAuth(t *testing.T) {
-	username := "user1"
-	token := "1234"
-	internal.AddUser(username, token)
-	defer internal.ClearUsers()
+	basic := buildDefaultUser()
 
-	router := internal.CreateRouter()
-	server := httptest.NewServer(router)
-	defer server.Close()
+	server := setupTest(basic)
+	defer teardownTest(server)
 
-	makeRequestWithHttpBasic(t, username, token+"invalid", "GET", server.URL+"/api/jobs", "", 401)
+	invalidAuth := httpBasic{
+		username: basic.username,
+		password: basic.password + "invalid",
+	}
+
+	makeRequestWithHttpBasic(t, invalidAuth, "GET", server.URL+"/api/jobs", "", 401)
 }
