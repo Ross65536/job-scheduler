@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,24 +12,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	userCtxKey = "user"
-	jobCtxKey  = "job"
-)
-
 func CreateRouter() http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
-	router.Use(authMiddleware)
 	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
 
 	topRouter := router.PathPrefix("/api/jobs").Subrouter()
-	topRouter.HandleFunc("", getJobs).Methods("GET")
-	topRouter.HandleFunc("", createJob).Methods("POST")
+	topRouter.HandleFunc("", authMiddleware(getJobs)).Methods("GET")
+	topRouter.HandleFunc("", authMiddleware(createJob)).Methods("POST")
 
 	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
-	jobsRouter.Use(jobIDMiddleware)
-	jobsRouter.HandleFunc("", getJob).Methods("GET")
-	jobsRouter.HandleFunc("", stopJob).Methods("DELETE")
+	jobsRouter.HandleFunc("", authMiddleware(jobIDMiddleware(getJob))).Methods("GET")
+	jobsRouter.HandleFunc("", authMiddleware(jobIDMiddleware(stopJob))).Methods("DELETE")
 
 	return router
 }
@@ -41,66 +33,46 @@ func StartServer() {
 	log.Fatal(http.ListenAndServe(":10000", router))
 }
 
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if username, password, ok := r.BasicAuth(); ok {
-			if user := GetIndexedUser(username); user != nil && user.IsTokenMatching(password) {
-				ctx := context.WithValue(r.Context(), userCtxKey, user)
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
-			}
+func checkAuth(r *http.Request) (*User, error) {
+	username, password, ok := r.BasicAuth()
+	if !ok {
+		return nil, errors.New("Request isn't using HTTP Basic")
+	}
 
-			log.Print("Client supplied invalid username or password")
-		} else {
-			log.Print("Client didn't provide Basic auth")
-		}
+	user := GetIndexedUser(username)
+	if user == nil {
+		return nil, errors.New("Invalid username")
+	}
 
-		writeJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
-	})
+	if !user.IsTokenMatching(password) {
+		return user, errors.New("Invalid token")
+	}
+
+	return user, nil
 }
 
-func jobIDMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := getContextUser(r)
-		id := mux.Vars(r)["id"]
+func authMiddleware(next func(http.ResponseWriter, *http.Request, *User)) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if user, err := checkAuth(r); err != nil {
+			log.Printf("Invalid user tried to access API: %s", err)
+			writeJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
+		} else {
+			next(w, r, user)
+		}
+	}
+}
 
+func jobIDMiddleware(next func(http.ResponseWriter, *http.Request, *Job)) func(w http.ResponseWriter, r *http.Request, user *User) {
+	return func(w http.ResponseWriter, r *http.Request, user *User) {
+		id := mux.Vars(r)["id"]
 		job := user.GetJob(id)
 		if job == nil {
-			writeJSONError(w, http.StatusNotFound, "invalid ID")
+			writeJSONError(w, http.StatusNotFound, "invalid job ID")
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), jobCtxKey, job)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func getContextUser(r *http.Request) *User {
-	v := r.Context().Value(userCtxKey)
-	if v == nil {
-		log.Panic("Logic error")
+		next(w, r, job)
 	}
-
-	user, ok := v.(*User)
-	if !ok {
-		log.Panic("Logic error")
-	}
-
-	return user
-}
-
-func getContextJob(r *http.Request) *Job {
-	v := r.Context().Value(jobCtxKey)
-	if v == nil {
-		log.Panic("Logic error")
-	}
-
-	job, ok := v.(*Job)
-	if !ok {
-		log.Panic("Logic error")
-	}
-
-	return job
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
@@ -123,15 +95,11 @@ func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) 
 	writeJSON(w, statusCode, error)
 }
 
-func getJob(w http.ResponseWriter, r *http.Request) {
-	job := getContextJob(r)
-
+func getJob(w http.ResponseWriter, r *http.Request, job *Job) {
 	writeJSON(w, http.StatusOK, job.AsView())
 }
 
-func stopJob(w http.ResponseWriter, r *http.Request) {
-	job := getContextJob(r)
-
+func stopJob(w http.ResponseWriter, r *http.Request, job *Job) {
 	if err := StopJob(job); err != nil {
 		log.Printf("Something went wrong stopping job: %s", err)
 		writeJSONError(w, http.StatusInternalServerError, "Failed to stop job")
@@ -141,9 +109,7 @@ func stopJob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func getJobs(w http.ResponseWriter, r *http.Request) {
-	user := getContextUser(r)
-
+func getJobs(w http.ResponseWriter, r *http.Request, user *User) {
 	jobs := user.GetAllJobs()
 	jobViews := make([]JobViewPartial, 0, len(jobs))
 
@@ -191,9 +157,7 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 	return createJob.Command, nil
 }
 
-func createJob(w http.ResponseWriter, r *http.Request) {
-	user := getContextUser(r)
-
+func createJob(w http.ResponseWriter, r *http.Request, user *User) {
 	command, err := parseJobCreation(r.Body)
 	if err != nil {
 		writeJSONError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command' in POST body")
