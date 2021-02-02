@@ -20,13 +20,13 @@ type Job struct {
 	lock      sync.RWMutex // synchronizes access to all of the fields of the struct
 	id        string       // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
 	proc      *os.Process
-	command   []string   // command name + argv, NOT EMPTY
-	status    JobStatus  // status of job, NOT EMPTY
-	stdout    []byte     // process stdout
-	stderr    []byte     // process stderr
-	exitCode  *int       // process exit code
-	createdAt time.Time  // time when job started, NOT EMPTY
-	stoppedAt *time.Time // time when job is stopped, killed or has finished
+	command   []string  // command name + argv, NOT EMPTY
+	status    JobStatus // status of job, NOT EMPTY
+	stdout    []byte    // process stdout
+	stderr    []byte    // process stderr
+	exitCode  *int      // process exit code
+	createdAt time.Time // time when job started, NOT EMPTY
+	stoppedAt time.Time // time when job is stopped, killed or has finished
 }
 
 func CreateJob(command []string, proc *os.Process) *Job {
@@ -94,8 +94,7 @@ func (j *Job) MarkJobAsStopping() {
 
 func (j *Job) endJobLocked(status JobStatus) {
 	j.status = status
-	t := time.Now()
-	j.stoppedAt = &t
+	j.stoppedAt = time.Now()
 }
 
 func (j *Job) MarkJobAsStopped() {
@@ -147,8 +146,8 @@ func (j *Job) AsMap() map[string]interface{} {
 		m["exit_code"] = *j.exitCode
 	}
 
-	if j.stoppedAt != nil {
-		m["stopped_at"] = *j.stoppedAt
+	if !j.stoppedAt.IsZero() {
+		m["stopped_at"] = j.stoppedAt
 	}
 
 	j.lock.RUnlock()
