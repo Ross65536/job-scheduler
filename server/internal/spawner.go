@@ -60,8 +60,8 @@ func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
 		return
 	}
 
-	job, jobErr := user.AddJob(func(id string) *Job { return CreateJob(id, command, cmd.Process) })
-	ch <- SpawnJobResult{job, jobErr}
+	job := CreateJob(command, cmd.Process)
+	ch <- SpawnJobResult{job, nil}
 
 	waiter := make(chan error, 1)
 	go readPipe(job.UpdateStdout, stdout, waiter)

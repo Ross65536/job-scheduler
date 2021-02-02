@@ -2,10 +2,7 @@ package internal
 
 import (
 	"crypto/subtle"
-	"errors"
 	"sync"
-
-	"github.com/google/uuid"
 )
 
 type User struct {
@@ -51,30 +48,11 @@ func (u *User) GetJob(jobID string) *Job {
 	return u.jobs[jobID]
 }
 
-func generateNewIDLocked(keys map[string]*Job) (string, error) {
-	for i := 0; i < 1000; i++ {
-		id := uuid.NewString()
-		if _, ok := keys[id]; !ok {
-			return id, nil
-		}
-	}
-
-	return "", errors.New("Failed to generate UUID")
-}
-
-func (u *User) AddJob(jobBuilder func(id string) *Job) (*Job, error) {
+func (u *User) AddJob(job *Job) {
 	u.jobsLock.Lock()
 	defer u.jobsLock.Unlock()
 
-	id, err := generateNewIDLocked(u.jobs)
-	if err != nil {
-		return nil, err
-	}
-
-	job := jobBuilder(id)
-	u.jobs[id] = job
-
-	return job, nil
+	u.jobs[job.GetId()] = job
 }
 
 func GetIndexedUser(username string) *User {

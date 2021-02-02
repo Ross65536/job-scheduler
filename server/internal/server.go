@@ -212,6 +212,7 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to start job %s, because: %s", command, spawnResult.Err)
 		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
 	} else {
+		user.AddJob(spawnResult.Job)
 		writeJSON(w, http.StatusCreated, MapSubmap(spawnResult.Job.AsMap(), createdJobFields...))
 	}
 }

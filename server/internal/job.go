@@ -4,6 +4,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type JobStatus string
@@ -29,14 +31,21 @@ type Job struct {
 	stoppedAt time.Time // time when job is stopped, killed or has finished
 }
 
-func CreateJob(id string, command []string, proc *os.Process) *Job {
+func CreateJob(command []string, proc *os.Process) *Job {
 	return &Job{
-		id:        id,
+		id:        uuid.NewString(),
 		proc:      proc,
 		command:   command,
 		status:    jobRunning,
 		createdAt: time.Now(),
 	}
+}
+
+func (j *Job) GetId() string {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
+	return j.id
 }
 
 func (j *Job) GetProcess() *os.Process {
