@@ -94,9 +94,9 @@ func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
 	}
 }
 
-func StopJob(job *Job) bool {
+func StopJob(job *Job) error {
 	if !job.IsExecuting() {
-		return true
+		return nil
 	}
 
 	var signal os.Signal = syscall.SIGTERM
@@ -105,10 +105,9 @@ func StopJob(job *Job) bool {
 	}
 
 	if err := job.GetProcess().Signal(signal); err != nil {
-		log.Printf("Something went wrong sending a signal %s", err)
-		return false
+		return err
 	}
 
 	job.MarkJobAsStopping()
-	return true
+	return nil
 }

@@ -134,7 +134,8 @@ func getJob(w http.ResponseWriter, r *http.Request) {
 func stopJob(w http.ResponseWriter, r *http.Request) {
 	job := getContextJob(r)
 
-	if ok := StopJob(job); !ok {
+	if err := StopJob(job); err != nil {
+		log.Printf("Something went wrong stopping job: %s", err)
 		writeJSONError(w, http.StatusInternalServerError, "Failed to stop job")
 		return
 	}
