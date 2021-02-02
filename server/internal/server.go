@@ -44,7 +44,7 @@ func StartServer() {
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if username, password, ok := r.BasicAuth(); ok {
-			if user := GetIndexedUser(username, password); user != nil {
+			if user := GetIndexedUser(username); user != nil && user.IsTokenMatching(password) {
 				ctx := context.WithValue(r.Context(), userCtxKey, user)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return

@@ -31,6 +31,14 @@ func (u *User) GetAllJobs() []*Job {
 	return jobsList
 }
 
+func (u *User) IsTokenMatching(token string) bool {
+	// not necessary to synchronize since 'Token' isn't supposed to be modified
+	// on the lifetime of the server
+
+	// constant time comparison to avoid oracle attacks
+	return subtle.ConstantTimeCompare([]byte(u.token), []byte(token)) == 1
+}
+
 func (u *User) GetJob(jobID string) *Job {
 	u.jobsLock.RLock()
 	defer u.jobsLock.RUnlock()
@@ -67,23 +75,15 @@ func (u *User) AddJob(jobBuilder func(id string) *Job) *Job {
 	return job
 }
 
-func GetIndexedUser(username string, password string) *User {
-	// TODO: either remove the lock, assuming that writes only happen during server initialization
-	// or implement a readers-writer lock
+func GetIndexedUser(username string) *User {
 	usersIndexLock.RLock()
-	user, ok := usersIndex[username]
-	usersIndexLock.RUnlock()
+	defer usersIndexLock.RUnlock()
 
-	if !ok {
-		return nil
+	if user, ok := usersIndex[username]; ok {
+		return &user
 	}
 
-	// constant time comparison to avoid oracle attacks
-	if subtle.ConstantTimeCompare([]byte(user.token), []byte(password)) != 1 {
-		return nil
-	}
-
-	return &user
+	return nil
 }
 
 func AddUser(username, token string) {
