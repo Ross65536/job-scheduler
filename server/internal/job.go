@@ -87,7 +87,7 @@ func (j *Job) IsExecuting() bool {
 func (j *Job) IsStopping() bool {
 	j.lock.Lock()
 
-	running := j.status == jobStopping
+	stopping := j.status == jobStopping
 
 	j.lock.Unlock()
 
