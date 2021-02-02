@@ -29,9 +29,9 @@ type Job struct {
 	stoppedAt time.Time // time when job is stopped, killed or has finished
 }
 
-func CreateJob(command []string, proc *os.Process) *Job {
+func CreateJob(id string, command []string, proc *os.Process) *Job {
 	return &Job{
-		id:        "",
+		id:        id,
 		proc:      proc,
 		command:   command,
 		status:    jobRunning,
@@ -44,12 +44,6 @@ func (j *Job) GetProcess() *os.Process {
 	defer j.lock.RUnlock()
 
 	return j.proc
-}
-
-func (j *Job) SetID(id string) {
-	j.lock.Lock()
-	j.id = id
-	j.lock.Unlock()
 }
 
 func (j *Job) UpdateStdout(bytes []byte) {

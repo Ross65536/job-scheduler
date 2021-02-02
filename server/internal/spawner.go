@@ -37,7 +37,7 @@ func readPipe(consumer func([]byte), r io.ReadCloser, ch chan<- bool) {
 	}
 }
 
-func SpawnJob(command []string, c chan<- *Job) {
+func SpawnJob(user *User, command []string, c chan<- *Job) {
 	cmd := exec.Command(command[0], command[1:]...)
 
 	stdout, stdoutErr := cmd.StdoutPipe()
@@ -61,7 +61,7 @@ func SpawnJob(command []string, c chan<- *Job) {
 		return
 	}
 
-	job := CreateJob(command, cmd.Process)
+	job := user.AddJob(func(id string) *Job { return CreateJob(id, command, cmd.Process) })
 	c <- job
 
 	waiter := make(chan bool, 1)
