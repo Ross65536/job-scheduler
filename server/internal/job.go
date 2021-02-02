@@ -17,7 +17,8 @@ const (
 )
 
 type Job struct {
-	id        string // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
+	lock      sync.RWMutex // synchronizes access to all of the fields of the struct
+	id        string       // ID exposed to the client (UUID), NOT EMPTY, UNIQUE
 	proc      *os.Process
 	command   []string   // command name + argv, NOT EMPTY
 	status    JobStatus  // status of job, NOT EMPTY
@@ -26,7 +27,6 @@ type Job struct {
 	exitCode  *int       // process exit code
 	createdAt time.Time  // time when job started, NOT EMPTY
 	stoppedAt *time.Time // time when job is stopped, killed or has finished
-	lock      sync.Mutex
 }
 
 func CreateJob(command []string, proc *os.Process) *Job {
@@ -40,11 +40,10 @@ func CreateJob(command []string, proc *os.Process) *Job {
 }
 
 func (j *Job) GetProcess() *os.Process {
-	j.lock.Lock()
-	proc := j.proc
-	j.lock.Unlock()
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 
-	return proc
+	return j.proc
 }
 
 func (j *Job) SetID(id string) {
@@ -70,23 +69,17 @@ func (j *Job) UpdateStderr(bytes []byte) {
 }
 
 func (j *Job) IsExecuting() bool {
-	j.lock.Lock()
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 
-	running := j.status == jobRunning || j.status == jobStopping
-
-	j.lock.Unlock()
-
-	return running
+	return j.status == jobRunning || j.status == jobStopping
 }
 
 func (j *Job) IsStopping() bool {
-	j.lock.Lock()
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 
-	stopping := j.status == jobStopping
-
-	j.lock.Unlock()
-
-	return running
+	return j.status == jobStopping
 }
 
 func (j *Job) StoppingJob() {
@@ -127,7 +120,7 @@ func (j *Job) FinishJob(exitCode int) {
 }
 
 func (j *Job) AsMap() map[string]interface{} {
-	j.lock.Lock()
+	j.lock.RLock()
 
 	m := map[string]interface{}{
 		"id":     j.id,
@@ -150,7 +143,7 @@ func (j *Job) AsMap() map[string]interface{} {
 		m["stopped_at"] = *j.stoppedAt
 	}
 
-	j.lock.Unlock()
+	j.lock.RUnlock()
 
 	return m
 }
