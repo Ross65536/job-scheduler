@@ -12,7 +12,7 @@ const (
 	bufSize = 256
 )
 
-func readPipe(consumer func([]byte), r io.ReadCloser, ch chan<- bool) {
+func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
 	buffer := make([]byte, bufSize)
 
 	for {
@@ -25,12 +25,10 @@ func readPipe(consumer func([]byte), r io.ReadCloser, ch chan<- bool) {
 			continue
 		}
 
-		r.Close()
 		if err == io.EOF {
-			ch <- true
+			ch <- nil
 		} else {
-			log.Printf("Something went wrong reading from pipe %s", err)
-			ch <- false
+			ch <- err
 		}
 
 		return
@@ -64,11 +62,18 @@ func SpawnJob(user *User, command []string, c chan<- *Job) {
 	job := user.AddJob(func(id string) *Job { return CreateJob(id, command, cmd.Process) })
 	c <- job
 
-	waiter := make(chan bool, 1)
+	waiter := make(chan error, 1)
 	go readPipe(job.UpdateStdout, stdout, waiter)
 	go readPipe(job.UpdateStderr, stderr, waiter)
-	<-waiter
-	<-waiter
+
+	for i := 0; i < 2; i++ {
+		select {
+		case pipeErr := <-waiter:
+			if pipeErr != nil {
+				log.Printf("Something went wrong reading from pipe %s", pipeErr)
+			}
+		}
+	}
 
 	switch waitErr := cmd.Wait(); exitErr := waitErr.(type) {
 	case nil:
