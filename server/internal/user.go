@@ -81,11 +81,7 @@ func GetIndexedUser(username string) *User {
 	state.usersIndexLock.RLock()
 	defer state.usersIndexLock.RUnlock()
 
-	if user, ok := state.usersIndex[username]; ok {
-		return user
-	}
-
-	return nil
+	return state.usersIndex[username]
 }
 
 func AddUser(username, token string) {
