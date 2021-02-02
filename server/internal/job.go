@@ -48,18 +48,16 @@ func (j *Job) GetProcess() *os.Process {
 
 func (j *Job) UpdateStdout(bytes []byte) {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	j.stdout = append(j.stdout, bytes...)
-
-	j.lock.Unlock()
 }
 
 func (j *Job) UpdateStderr(bytes []byte) {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	j.stderr = append(j.stderr, bytes...)
-
-	j.lock.Unlock()
 }
 
 func (j *Job) IsExecuting() bool {
@@ -78,12 +76,11 @@ func (j *Job) IsStopping() bool {
 
 func (j *Job) MarkJobAsStopping() {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	if j.status == jobRunning {
 		j.status = jobStopping
 	}
-
-	j.lock.Unlock()
 }
 
 func (j *Job) endJobLocked(status JobStatus) {
@@ -93,35 +90,33 @@ func (j *Job) endJobLocked(status JobStatus) {
 
 func (j *Job) MarkJobAsStopped() {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	if j.status == jobStopping {
 		j.endJobLocked(jobStopped)
 	} else {
 		j.endJobLocked(jobKilled)
 	}
-
-	j.lock.Unlock()
 }
 
 func (j *Job) MarkJobAsKilled() {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	j.endJobLocked(jobKilled)
-
-	j.lock.Unlock()
 }
 
 func (j *Job) MarkJobAsFinished(exitCode int) {
 	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	j.endJobLocked(jobFinished)
 	j.exitCode = &exitCode
-
-	j.lock.Unlock()
 }
 
 func (j *Job) AsMap() map[string]interface{} {
 	j.lock.RLock()
+	defer j.lock.RUnlock()
 
 	m := map[string]interface{}{
 		"id":     j.id,
@@ -143,8 +138,6 @@ func (j *Job) AsMap() map[string]interface{} {
 	if !j.stoppedAt.IsZero() {
 		m["stopped_at"] = j.stoppedAt
 	}
-
-	j.lock.RUnlock()
 
 	return m
 }

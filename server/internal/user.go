@@ -94,18 +94,18 @@ func GetIndexedUser(username string) *User {
 
 func AddUser(username, token string) {
 	state.usersIndexLock.Lock()
+	defer state.usersIndexLock.Unlock()
 
 	state.usersIndex[username] = &User{
 		username: username,
 		token:    token,
 		jobs:     map[string]*Job{},
 	}
-
-	state.usersIndexLock.Unlock()
 }
 
 func ClearUsers() {
 	state.usersIndexLock.Lock()
+	defer state.usersIndexLock.Unlock()
+
 	state.usersIndex = map[string]*User{}
-	state.usersIndexLock.Unlock()
 }
