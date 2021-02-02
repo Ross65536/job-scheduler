@@ -11,31 +11,31 @@ import (
 // User username is already stored in the 'usersIndex' keys
 type User struct {
 	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in base64 format
+	jobsLock sync.RWMutex    // synchronizes access to the jobs map
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
-	jobsLock sync.Mutex
 }
 
+var usersIndexLock sync.RWMutex = sync.RWMutex{}   // synchronizes access to the 'usersIndex' global state
 var usersIndex map[string]User = map[string]User{} // maps username to user struct
-var usersIndexLock sync.Mutex = sync.Mutex{}
 
 func (u *User) GetAllJobs() []*Job {
-	u.jobsLock.Lock()
+	u.jobsLock.RLock()
+	defer u.jobsLock.RUnlock()
+
 	jobsList := make([]*Job, 0, len(u.jobs))
 
 	for _, value := range u.jobs {
 		jobsList = append(jobsList, value)
 	}
-	u.jobsLock.Unlock()
 
 	return jobsList
 }
 
 func (u *User) GetJob(jobID string) *Job {
-	u.jobsLock.Lock()
-	job, ok := u.jobs[jobID]
-	u.jobsLock.Unlock()
+	u.jobsLock.RLock()
+	defer u.jobsLock.RUnlock()
 
-	if ok {
+	if job, ok := u.jobs[jobID]; ok {
 		return job
 	}
 
@@ -70,9 +70,9 @@ func (u *User) AddJob(jobBuilder func(id string) *Job) *Job {
 func GetIndexedUser(username string, password string) *User {
 	// TODO: either remove the lock, assuming that writes only happen during server initialization
 	// or implement a readers-writer lock
-	usersIndexLock.Lock()
+	usersIndexLock.RLock()
 	user, ok := usersIndex[username]
-	usersIndexLock.Unlock()
+	usersIndexLock.RUnlock()
 
 	if !ok {
 		return nil
