@@ -52,7 +52,7 @@ func (u *User) AddJob(job *Job) {
 	u.jobsLock.Lock()
 	defer u.jobsLock.Unlock()
 
-	u.jobs[job.GetId()] = job
+	u.jobs[job.GetID()] = job
 }
 
 func GetIndexedUser(username string) *User {

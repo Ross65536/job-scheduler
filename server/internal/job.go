@@ -41,7 +41,7 @@ func CreateJob(command []string, proc *os.Process) *Job {
 	}
 }
 
-func (j *Job) GetId() string {
+func (j *Job) GetID() string {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
