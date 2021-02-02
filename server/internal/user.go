@@ -48,11 +48,7 @@ func (u *User) GetJob(jobID string) *Job {
 	u.jobsLock.RLock()
 	defer u.jobsLock.RUnlock()
 
-	if job, ok := u.jobs[jobID]; ok {
-		return job
-	}
-
-	return nil
+	return u.jobs[jobID]
 }
 
 func generateNewIDLocked(keys map[string]*Job) (string, error) {
