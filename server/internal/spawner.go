@@ -3,9 +3,7 @@ package internal
 import (
 	"io"
 	"log"
-	"os"
 	"os/exec"
-	"syscall"
 )
 
 const (
@@ -88,22 +86,4 @@ func SpawnJob(user *User, command []string) (*Job, error) {
 	go waitJob(job, cmd, stdout, stderr)
 
 	return job, nil
-}
-
-func StopJob(job *Job) error {
-	if !job.IsExecuting() {
-		return nil
-	}
-
-	var signal os.Signal = syscall.SIGTERM
-	if job.IsStopping() {
-		signal = os.Kill
-	}
-
-	if err := job.GetProcess().Signal(signal); err != nil {
-		return err
-	}
-
-	job.MarkAsStopping()
-	return nil
 }

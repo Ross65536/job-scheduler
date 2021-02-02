@@ -3,6 +3,7 @@ package internal
 import (
 	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,13 +49,6 @@ func (j *Job) GetID() string {
 	return j.id
 }
 
-func (j *Job) GetProcess() *os.Process {
-	j.lock.RLock()
-	defer j.lock.RUnlock()
-
-	return j.proc
-}
-
 func (j *Job) UpdateStdout(bytes []byte) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
@@ -69,27 +63,8 @@ func (j *Job) UpdateStderr(bytes []byte) {
 	j.stderr = append(j.stderr, bytes...)
 }
 
-func (j *Job) IsExecuting() bool {
-	j.lock.RLock()
-	defer j.lock.RUnlock()
-
+func (j *Job) isExecutingLocked() bool {
 	return j.status == jobRunning || j.status == jobStopping
-}
-
-func (j *Job) IsStopping() bool {
-	j.lock.RLock()
-	defer j.lock.RUnlock()
-
-	return j.status == jobStopping
-}
-
-func (j *Job) MarkAsStopping() {
-	j.lock.Lock()
-	defer j.lock.Unlock()
-
-	if j.status == jobRunning {
-		j.status = jobStopping
-	}
 }
 
 func (j *Job) endJobLocked(status JobStatus) {
@@ -121,6 +96,30 @@ func (j *Job) MarkAsFinished(exitCode int) {
 
 	j.endJobLocked(jobFinished)
 	j.exitCode = &exitCode
+}
+
+func (j *Job) StopJob() error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if !j.isExecutingLocked() {
+		return nil
+	}
+
+	var signal os.Signal = syscall.SIGTERM
+	if j.status == jobStopping {
+		signal = os.Kill
+	}
+
+	if err := j.proc.Signal(signal); err != nil {
+		return err
+	}
+
+	if j.status == jobRunning {
+		j.status = jobStopping
+	}
+
+	return nil
 }
 
 func (j *Job) AsView() JobViewFull {
