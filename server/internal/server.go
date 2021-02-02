@@ -159,18 +159,22 @@ func getJobs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, jobViews)
 }
 
-func isCommandValid(command []string) bool {
+func isCommandValid(command []string) error {
+	if command == nil {
+		return errors.New("Invalid JSON schema: command not present")
+	}
+
 	if len(command) == 0 {
-		return false
+		return errors.New("Invalid JSON schema: command must have at least 1 element")
 	}
 
 	if program := command[0]; len(strings.TrimSpace(program)) == 0 {
-		return false
+		return errors.New("Invalid JSON schema: command must have at least 1 non-empty element")
 	}
 
 	// TODO: add more sanity checks like invalid characters, etc
 
-	return true
+	return nil
 }
 
 func parseJobCreation(r io.Reader) ([]string, error) {
@@ -187,8 +191,8 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 		return nil, err
 	}
 
-	if !isCommandValid(createJob.Command) {
-		return nil, errors.New("Invalid JSON schema")
+	if err := isCommandValid(createJob.Command); err != nil {
+		return nil, err
 	}
 
 	return createJob.Command, nil
