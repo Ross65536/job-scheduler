@@ -104,10 +104,13 @@ func getContextJob(r *http.Request) *Job {
 }
 
 func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(model); err != nil {
-		log.Print("Something went wrong returning a JSON response to the user")
+	if json, err := json.Marshal(model); err != nil {
+		log.Printf("Something went wrong returning a JSON response to the user %s", err)
+		writeJSONError(w, http.StatusInternalServerError, "Something went wrong") // this shouldn't fail
+	} else {
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		w.Write(json)
 	}
 }
 
