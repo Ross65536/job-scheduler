@@ -35,32 +35,33 @@ func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
 	}
 }
 
-func SpawnJob(user *User, command []string, c chan<- *Job) {
+type SpawnJobResult struct {
+	Job *Job
+	Err error
+}
+
+func SpawnJob(user *User, command []string, ch chan<- SpawnJobResult) {
 	cmd := exec.Command(command[0], command[1:]...)
 
 	stdout, stdoutErr := cmd.StdoutPipe()
 	if stdoutErr != nil {
-		log.Printf("Failed to create stderr pipe %s, %s", command, stdoutErr)
-		c <- nil
+		ch <- SpawnJobResult{nil, stdoutErr}
 		return
 	}
 
 	stderr, stderrErr := cmd.StderrPipe()
 	if stderrErr != nil {
-		log.Printf("Failed to create stderr pipe %s, %s", command, stderrErr)
-		c <- nil
+		ch <- SpawnJobResult{nil, stderrErr}
 		return
 	}
 
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("Failed to start process %s, %s", command, err)
-		c <- nil
+	if startErr := cmd.Start(); startErr != nil {
+		ch <- SpawnJobResult{nil, startErr}
 		return
 	}
 
-	job := user.AddJob(func(id string) *Job { return CreateJob(id, command, cmd.Process) })
-	c <- job
+	job, jobErr := user.AddJob(func(id string) *Job { return CreateJob(id, command, cmd.Process) })
+	ch <- SpawnJobResult{job, jobErr}
 
 	waiter := make(chan error, 1)
 	go readPipe(job.UpdateStdout, stdout, waiter)

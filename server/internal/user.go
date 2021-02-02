@@ -2,7 +2,7 @@ package internal
 
 import (
 	"crypto/subtle"
-	"log"
+	"errors"
 	"sync"
 
 	"github.com/google/uuid"
@@ -50,29 +50,30 @@ func (u *User) GetJob(jobID string) *Job {
 	return nil
 }
 
-func generateNewIDLocked(keys map[string]*Job) string {
+func generateNewIDLocked(keys map[string]*Job) (string, error) {
 	for i := 0; i < 1000; i++ {
 		id := uuid.NewString()
 		if _, ok := keys[id]; !ok {
-			return id
+			return id, nil
 		}
 	}
 
-	// in practice it shouldn't fail unless there is some logic error
-	log.Panic("Failed to generate UUID")
-	return "" // not reached
+	return "", errors.New("Failed to generate UUID")
 }
 
-func (u *User) AddJob(jobBuilder func(id string) *Job) *Job {
+func (u *User) AddJob(jobBuilder func(id string) *Job) (*Job, error) {
 	u.jobsLock.Lock()
+	defer u.jobsLock.Unlock()
 
-	id := generateNewIDLocked(u.jobs)
+	id, err := generateNewIDLocked(u.jobs)
+	if err != nil {
+		return nil, err
+	}
+
 	job := jobBuilder(id)
 	u.jobs[id] = job
 
-	u.jobsLock.Unlock()
-
-	return job
+	return job, nil
 }
 
 func GetIndexedUser(username string) *User {
