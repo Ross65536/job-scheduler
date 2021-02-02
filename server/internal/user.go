@@ -10,6 +10,7 @@ import (
 
 // User username is already stored in the 'usersIndex' keys
 type User struct {
+	username string          // the username
 	token    string          // the API token given to the user to access the API, will be generated using a CSPRNG, stored in base64 format
 	jobsLock sync.RWMutex    // synchronizes access to the jobs map
 	jobs     map[string]*Job // Index. list of jobs that belong to the user. Index key is the job ID.
@@ -90,8 +91,9 @@ func AddUser(username, token string) {
 	usersIndexLock.Lock()
 
 	usersIndex[username] = &User{
-		token: token,
-		jobs:  map[string]*Job{},
+		username: username,
+		token:    token,
+		jobs:     map[string]*Job{},
 	}
 
 	usersIndexLock.Unlock()
