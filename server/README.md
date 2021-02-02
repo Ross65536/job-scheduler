@@ -2,7 +2,7 @@
 
 ## Instructions
 
-Must be run inside the `server` folder.
+The shell commands are assuming you are in the `server` folder.
 
 Server listens on http://localhost:10000
 
