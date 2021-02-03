@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -49,6 +50,10 @@ func intToStr(num *int) string {
 }
 
 func displayJobList(jobs []*JobViewPartial) {
+
+	sort.Slice(jobs, func(i, j int) bool {
+		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
+	})
 
 	fmt.Println("ID | STATUS | COMMAND | CREATED_AT")
 	for _, job := range jobs {
