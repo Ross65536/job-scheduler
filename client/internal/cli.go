@@ -128,7 +128,7 @@ func startTask(api *APIClient, commandRest []string) error {
 }
 
 func printHelp() {
-	fmt.Println(`Format: client [-c=<connection>] <command> [id/command]
+	fmt.Println(`Format: client <command> [-c=<connection>] [id/command]
 	
 	command: list | show | stop | start | help
 
