@@ -21,7 +21,19 @@ func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
 	return jobs, err
 }
 
-func (api *APIClient) StartJob(command []string) (*JobViewFull, error) {
+func (api *APIClient) ShowJob(id string) (*JobViewFull, error) {
+	resp, err := api.HTTPClient.MakeJSONRequest(http.MethodGet, nil, "api", "jobs", id)
+	if err != nil {
+		return nil, err
+	}
+
+	job := JobViewFull{}
+	err = json.Unmarshal(resp, &job)
+
+	return &job, err
+}
+
+func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 	job := JobViewCommand{Command: command}
 	requestJson, err := json.Marshal(job)
 	if err != nil {
@@ -33,8 +45,8 @@ func (api *APIClient) StartJob(command []string) (*JobViewFull, error) {
 		return nil, err
 	}
 
-	respJob := &JobViewFull{}
+	respJob := JobViewPartial{}
 	err = json.Unmarshal(resp, &respJob)
 
-	return respJob, err
+	return &respJob, err
 }

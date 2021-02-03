@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func parseFlags([]string) (*APIClient, []string, error) {
@@ -19,6 +20,28 @@ func parseFlags([]string) (*APIClient, []string, error) {
 	return &api, os.Args, nil
 }
 
+func joinString(command []string) string {
+	return strings.Join(command, " ")
+}
+
+func intToStr(num *int) string {
+	if num == nil {
+		return "-"
+	}
+
+	return fmt.Sprintf("%d", *num)
+}
+
+func displayJobList(jobs []*JobViewPartial) {
+
+	fmt.Println("ID | STATUS | COMMAND | CREATED_AT")
+	for _, job := range jobs {
+		fmt.Printf("%s | %s | %s | %s \n", job.ID, job.Status, joinString(job.Command), job.CreatedAt)
+	}
+
+	fmt.Printf("--- %d jobs --- \n", len(jobs))
+}
+
 func listTask(api *APIClient, commandRest []string) error {
 	if len(commandRest) != 0 {
 		return errors.New("Too many args")
@@ -29,7 +52,24 @@ func listTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	DisplayJobList(jobs)
+	displayJobList(jobs)
+	return nil
+}
+
+func showTask(api *APIClient, commandRest []string) error {
+	if len(commandRest) != 1 {
+		return errors.New("Must specify ID")
+	}
+
+	id := commandRest[0]
+
+	job, err := api.ShowJob(id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s, %s, exit: %s, %s -> %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n", joinString(job.Command), job.Status, intToStr(job.ExitCode), job.CreatedAt, job.StoppedAt, job.Stdout, job.Stderr)
+
 	return nil
 }
 
@@ -59,6 +99,8 @@ func dispatchCommand(api *APIClient, command []string) error {
 		return listTask(api, commandRest)
 	case "start":
 		return startTask(api, commandRest)
+	case "show":
+		return showTask(api, commandRest)
 	default:
 		return errors.New("Unknown command " + task)
 	}
