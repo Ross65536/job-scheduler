@@ -9,7 +9,11 @@ import (
 func WriteJSON(w http.ResponseWriter, statusCode int, model interface{}) {
 	if json, err := json.Marshal(model); err != nil {
 		log.Printf("Something went wrong returning a JSON response to the user %s", err)
-		WriteJSONError(w, http.StatusInternalServerError, "Something went wrong") // this shouldn't fail
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{
+			"status": 500,
+			"message": "Something went wrong"
+		}`))
 	} else {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
