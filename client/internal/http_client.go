@@ -108,8 +108,8 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 }
 
 type errorType struct {
-	status  int
-	message string
+	Status  int
+	Message string
 }
 
 func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error {
@@ -124,8 +124,8 @@ func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error 
 	parsed := errorType{}
 	err = json.Unmarshal(body, &parsed)
 
-	if err != nil && parsed.message != "" {
-		return fmt.Errorf("An error occurred (HTTP %d): %s", code, parsed.message)
+	if err == nil && parsed.Message != "" {
+		return fmt.Errorf("An error occurred (HTTP %d): %s", code, parsed.Message)
 	} else {
 		return fmt.Errorf("An error occurred (HTTP %d): %s", code, string(body))
 	}
