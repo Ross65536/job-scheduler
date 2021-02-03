@@ -112,10 +112,6 @@ func (s *Server) getJobs(w http.ResponseWriter, r *http.Request, user *User) {
 }
 
 func isCommandValid(command []string) error {
-	if command == nil {
-		return errors.New("Invalid JSON schema: command not present")
-	}
-
 	if len(command) == 0 {
 		return errors.New("Invalid JSON schema: command must have at least 1 element")
 	}
