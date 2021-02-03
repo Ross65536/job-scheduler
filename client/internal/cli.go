@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -18,25 +19,46 @@ func parseFlags([]string) (*APIClient, []string, error) {
 	return &api, os.Args, nil
 }
 
+func listTask(api *APIClient, commandRest []string) error {
+	if len(commandRest) != 0 {
+		return errors.New("Too many args")
+	}
+
+	jobs, err := api.ListJobs()
+	if err != nil {
+		return err
+	}
+
+	DisplayJobList(jobs)
+	return nil
+}
+
+func startTask(api *APIClient, commandRest []string) error {
+	if len(commandRest) == 0 {
+		return errors.New("Must specify job to start")
+	}
+
+	job, err := api.StartJob(commandRest)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("ID: %s\n", job.ID)
+	return nil
+}
+
 func dispatchCommand(api *APIClient, command []string) error {
 	if len(command) < 2 {
 		return errors.New("Invalid usage, must specify command")
 	}
 
-	switch task := command[1]; task {
+	task := command[1]
+	commandRest := command[2:]
+	switch task {
 	case "list":
-		if len(command) != 2 {
-			return errors.New("Too many args")
-		}
-
-		jobs, err := api.ListJobs()
-		if err != nil {
-			return err
-		}
-
-		DisplayJobList(jobs)
-
-		return nil
+		return listTask(api, commandRest)
+	case "start":
+		return startTask(api, commandRest)
 	default:
 		return errors.New("Unknown command " + task)
 	}
