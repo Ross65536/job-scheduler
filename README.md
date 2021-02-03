@@ -2,6 +2,8 @@
 
 A server and CLI for starting/stopping/getting jobs
 
+Go `1.15` is recommended. You should be able to clone this anywhere in order to compile the projects.
+
 Consists of a:
 
 - Server: [README](./server)
