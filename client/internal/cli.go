@@ -91,11 +91,13 @@ func stopTask(api *APIClient, commandRest []string) error {
 }
 
 func startTask(api *APIClient, commandRest []string) error {
-	if len(commandRest) == 0 {
+	if len(commandRest) != 1 {
 		return errors.New("Must specify job to start")
 	}
 
-	job, err := api.StartJob(commandRest)
+	jobArgs := strings.Fields(commandRest[0])
+
+	job, err := api.StartJob(jobArgs)
 	if err != nil {
 		return err
 	}
