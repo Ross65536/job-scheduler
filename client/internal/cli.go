@@ -8,9 +8,10 @@ import (
 )
 
 func parseFlags([]string) (*APIClient, []string, error) {
-	// TODO parse os.Args for flags and filter them out of the command proper
+	// command := []string{}
 
-	httpClient, err := NewHTTPClient("user2", "oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=", "http://localhost:10000")
+	// TODO parse os.Args for flags and filter them out of the command proper
+	httpClient, err := NewHTTPClient("http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000")
 	if err != nil {
 		return nil, nil, err
 	}

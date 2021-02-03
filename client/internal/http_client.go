@@ -23,8 +23,8 @@ type HTTPClient struct {
 // it's thread-safe, recommended to reuse the client
 var httpClient = http.Client{}
 
-func NewHTTPClient(username, token, apiUrl string) (*HTTPClient, error) {
-	uri, err := url.Parse(apiUrl)
+func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
+	uri, err := url.ParseRequestURI(apiUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,20 @@ func NewHTTPClient(username, token, apiUrl string) (*HTTPClient, error) {
 		return nil, errors.New("Invalid url scheme")
 	}
 
-	if IsWhitespaceString(username) || IsWhitespaceString(token) {
-		return nil, errors.New("Invalid HTTP basic credentials")
+	if uri.User == nil {
+		return nil, errors.New("Base URI must have an HTTP basic username and password encoded")
 	}
 
+	password, ok := uri.User.Password()
+	if !ok {
+		return nil, errors.New("Base URI must have an HTTP basic password encoded")
+	}
+
+	// uri.User
+
 	return &HTTPClient{
-		username: username,
-		token:    token,
+		username: uri.User.Username(),
+		token:    password,
 		apiUrl:   *uri,
 	}, nil
 }
