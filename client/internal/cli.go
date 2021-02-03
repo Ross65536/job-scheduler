@@ -11,14 +11,14 @@ const (
 )
 
 func parseFlags(args []string) (*APIClient, []string, error) {
-	command := []string{}
+	filteredArgs := []string{}
 	url := ""
 
 	for _, arg := range args {
 		if strings.HasPrefix(arg, connectionFlag) {
 			url = strings.TrimPrefix(arg, connectionFlag)
 		} else {
-			command = append(command, arg)
+			filteredArgs = append(filteredArgs, arg)
 		}
 	}
 
@@ -33,7 +33,7 @@ func parseFlags(args []string) (*APIClient, []string, error) {
 	}
 	api := APIClient{httpClient}
 
-	return &api, command, nil
+	return &api, filteredArgs, nil
 }
 
 func joinString(command []string) string {
@@ -122,32 +122,51 @@ func startTask(api *APIClient, commandRest []string) error {
 	return nil
 }
 
-func dispatchCommand(api *APIClient, command []string) error {
-	if len(command) < 2 {
-		return errors.New("Invalid usage, must specify command")
-	}
+func printHelp() {
+	fmt.Println(`Format: client [-c=<connection>] <command> [id/command]
+	
+	command: list | show | stop | start | help
 
-	task := command[1]
-	commandRest := command[2:]
-	switch task {
-	case "list":
-		return listTask(api, commandRest)
-	case "start":
-		return startTask(api, commandRest)
-	case "show":
-		return showTask(api, commandRest)
-	case "stop":
-		return stopTask(api, commandRest)
-	default:
-		return errors.New("Unknown command " + task)
-	}
+	Examples:
+	- client help
+	- client -c=http://user:pass@localhost:80 list
+	- client -c=http://user:pass@localhost:80 show d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:80 stop d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:80 start "ls -l /"
+	`)
 }
 
 func Start(args []string) error {
-	api, command, err := parseFlags(args)
+	if len(args) < 2 {
+		return errors.New("Invalid usage, must specify command")
+	}
+
+	task := args[1]
+	if task == "help" {
+		printHelp()
+		return nil
+	}
+
+	api, filteredArgs, err := parseFlags(args)
 	if err != nil {
 		return err
 	}
 
-	return dispatchCommand(api, command)
+	if len(filteredArgs) < 2 {
+		return errors.New("Must specify command")
+	}
+
+	argsRest := filteredArgs[2:]
+	switch task {
+	case "list":
+		return listTask(api, argsRest)
+	case "start":
+		return startTask(api, argsRest)
+	case "show":
+		return showTask(api, argsRest)
+	case "stop":
+		return stopTask(api, argsRest)
+	default:
+		return errors.New("Unknown command " + task)
+	}
 }
