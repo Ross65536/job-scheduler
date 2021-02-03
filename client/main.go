@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"os"
+
+	"github.com/ros-k/job-manager/client/internal"
+)
 
 func main() {
-	fmt.Println("Hello")
+	args := os.Args
+	if err := internal.Start(args); err != nil {
+		log.Fatalf("Failed to start command: %s, because: %s", args[1:], err)
+	}
 }
