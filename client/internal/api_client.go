@@ -50,3 +50,8 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 
 	return &respJob, err
 }
+
+func (api *APIClient) StopJob(id string) error {
+	_, err := api.HTTPClient.MakeJSONRequest(http.MethodDelete, nil, "api", "jobs", id)
+	return err
+}

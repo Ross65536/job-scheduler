@@ -68,8 +68,25 @@ func showTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	fmt.Printf("%s, %s, exit: %s, %s -> %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n", joinString(job.Command), job.Status, intToStr(job.ExitCode), job.CreatedAt, job.StoppedAt, job.Stdout, job.Stderr)
+	fmt.Printf("%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n",
+		joinString(job.Command), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
 
+	return nil
+}
+
+func stopTask(api *APIClient, commandRest []string) error {
+	if len(commandRest) != 1 {
+		return errors.New("Must specify ID")
+	}
+
+	id := commandRest[0]
+
+	err := api.StopJob(id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Stopping")
 	return nil
 }
 
@@ -101,6 +118,8 @@ func dispatchCommand(api *APIClient, command []string) error {
 		return startTask(api, commandRest)
 	case "show":
 		return showTask(api, commandRest)
+	case "stop":
+		return stopTask(api, commandRest)
 	default:
 		return errors.New("Unknown command " + task)
 	}
