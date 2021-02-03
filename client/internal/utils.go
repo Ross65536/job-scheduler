@@ -2,10 +2,7 @@ package internal
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io"
-	"net/http"
 	"strings"
 )
 
@@ -24,22 +21,4 @@ func ReadCloseableBuffer(buffer io.ReadCloser) ([]byte, error) {
 	}
 
 	return byteBuffer.Bytes(), nil
-}
-
-func BufferToMap(buffer io.ReadCloser) (map[string]interface{}, error) {
-	if b, err := ReadCloseableBuffer(buffer); err != nil {
-		return nil, err
-	} else {
-		m := make(map[string]interface{})
-		if jsonErr := json.Unmarshal(b, &m); jsonErr != nil {
-			fmt.Println(jsonErr.Error())
-			return nil, jsonErr
-		} else {
-			return m, nil
-		}
-	}
-}
-
-func JsonContentType(header *http.Header) bool {
-	return strings.Contains(header.Get("Content-Type"), jsonMime)
 }

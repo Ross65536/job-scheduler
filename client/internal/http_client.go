@@ -2,7 +2,9 @@ package internal
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -58,13 +60,10 @@ func (c *HTTPClient) MakeJSONRequest(requestMethod string, requestBody []byte, p
 	}
 
 	if response.StatusCode/100 != 2 {
-		return nil, errors.New("Something went wrong")
-		// return nil, c.buildProtocolErrorMessage(response)
+		return nil, c.buildProtocolErrorMessage(response)
 	}
 
-	if !JsonContentType(&response.Header) {
-		return nil, errors.New("returned content-type isn't json")
-	}
+	// TODO add checks for Content-Type header, etc
 
 	return ReadCloseableBuffer(response.Body)
 }
@@ -108,24 +107,26 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 	return request, nil
 }
 
-// func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error {
-// 	var httpError error = HttpStatusCodeError(response.StatusCode)
+type errorType struct {
+	status  int
+	message string
+}
 
-// 	if JsonContentType(&response.Header) {
-// 		if m, err := BufferToMap(response.Body); err == nil {
-// 			statusCode := MapGetValue(m, "code")
-// 			msg := MapGetValue(m, "message")
-// 			id := SliceFirstNonNil(MapGetValue(m, "id"), MapGetValue(m, "gid"))
-// 			if msg != nil && statusCode != nil {
-// 				errMsg := fmt.Sprintf("%v: %v", statusCode, msg)
-// 				if id != nil && response.StatusCode == 409 {
-// 					return ConflictError{errMsg, id.(string)}
-// 				} else {
-// 					return ServerError(errMsg)
-// 				}
-// 			}
-// 		}
-// 	}
+func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error {
+	code := response.StatusCode
 
-// 	return httpError
-// }
+	body, err := ReadCloseableBuffer(response.Body)
+	if err != nil {
+		return fmt.Errorf("An error occurred (HTTP %d), failed reading HTTP response: %s", code, err)
+	}
+
+	// best case JSON parsing, return raw HTTP body otherwise
+	parsed := errorType{}
+	err = json.Unmarshal(body, &parsed)
+
+	if err != nil && parsed.message != "" {
+		return fmt.Errorf("An error occurred (HTTP %d): %s", code, parsed.message)
+	} else {
+		return fmt.Errorf("An error occurred (HTTP %d): %s", code, string(body))
+	}
+}
