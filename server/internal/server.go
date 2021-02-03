@@ -27,10 +27,10 @@ func CreateRouter(state *State) http.Handler {
 	return router
 }
 
-func StartServer(state *State) {
+func StartServer(state *State) error {
 	router := CreateRouter(state)
 
-	log.Fatal(http.ListenAndServe(":10000", router))
+	return http.ListenAndServe(":10000", router)
 }
 
 func checkAuth(state *State, r *http.Request) (*User, error) {
