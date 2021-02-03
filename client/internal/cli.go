@@ -3,22 +3,37 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 )
 
-func parseFlags([]string) (*APIClient, []string, error) {
-	// command := []string{}
+const (
+	connectionFlag = "-c="
+)
+
+func parseFlags(args []string) (*APIClient, []string, error) {
+	command := []string{}
+	url := ""
+
+	for _, arg := range args {
+		if strings.HasPrefix(arg, connectionFlag) {
+			url = strings.TrimPrefix(arg, connectionFlag)
+		} else {
+			command = append(command, arg)
+		}
+	}
+
+	if url == "" {
+		return nil, nil, fmt.Errorf("Must specify connection flag '%s'", connectionFlag)
+	}
 
 	// TODO parse os.Args for flags and filter them out of the command proper
-	httpClient, err := NewHTTPClient("http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000")
+	httpClient, err := NewHTTPClient(url)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	api := APIClient{httpClient}
 
-	return &api, os.Args, nil
+	return &api, command, nil
 }
 
 func joinString(command []string) string {
