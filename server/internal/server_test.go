@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -86,7 +87,12 @@ func limitedWait(t *testing.T, body func() bool) {
 func setupTest(basic httpBasic) (*internal.State, *httptest.Server) {
 	state := internal.NewState()
 	state.AddUser(basic.username, basic.password)
-	router := internal.CreateRouter(state)
+	server, err := internal.NewServer(state)
+	if err != nil {
+		log.Fatalf("Failed to setup test %s", err)
+	}
+
+	router := server.GetRouter()
 	return state, httptest.NewServer(router)
 }
 

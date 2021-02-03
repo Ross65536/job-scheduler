@@ -12,34 +12,45 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CreateRouter(state *State) http.Handler {
-	router := mux.NewRouter().StrictSlash(true)
+type Server struct {
+	state  *State
+	router *mux.Router
+}
+
+func (s *Server) GetRouter() http.Handler {
+	return s.router
+}
+
+func (s *Server) addRoutes() {
 	// TODO: add checks/validation for 'Accept', 'Content-Type' client headers
 
-	topRouter := router.PathPrefix("/api/jobs").Subrouter()
-	topRouter.HandleFunc("", authMiddleware(state, getJobs)).Methods("GET")
-	topRouter.HandleFunc("", authMiddleware(state, createJob)).Methods("POST")
+	topRouter := s.router.PathPrefix("/api/jobs").Subrouter()
+	topRouter.HandleFunc("", s.authMiddleware(s.getJobs)).Methods("GET")
+	topRouter.HandleFunc("", s.authMiddleware(s.createJob)).Methods("POST")
 
-	jobsRouter := router.PathPrefix("/api/jobs/{id}").Subrouter()
-	jobsRouter.HandleFunc("", authMiddleware(state, jobIDMiddleware(getJob))).Methods("GET")
-	jobsRouter.HandleFunc("", authMiddleware(state, jobIDMiddleware(stopJob))).Methods("DELETE")
-
-	return router
+	jobsRouter := s.router.PathPrefix("/api/jobs/{id}").Subrouter()
+	jobsRouter.HandleFunc("", s.authMiddleware(s.jobIDMiddleware(s.getJob))).Methods("GET")
+	jobsRouter.HandleFunc("", s.authMiddleware(s.jobIDMiddleware(s.stopJob))).Methods("DELETE")
 }
 
-func StartServer(state *State) error {
-	router := CreateRouter(state)
+func NewServer(state *State) (*Server, error) {
+	s := &Server{state: state, router: mux.NewRouter().StrictSlash(true)}
+	s.addRoutes()
 
-	return http.ListenAndServe(":10000", router)
+	return s, nil
 }
 
-func checkAuth(state *State, r *http.Request) (*User, error) {
+func (s *Server) Start() error {
+	return http.ListenAndServe(":10000", s.router)
+}
+
+func (s *Server) checkAuth(r *http.Request) (*User, error) {
 	username, password, ok := r.BasicAuth()
 	if !ok {
 		return nil, errors.New("Request isn't using HTTP Basic")
 	}
 
-	user := state.GetIndexedUser(username)
+	user := s.state.GetIndexedUser(username)
 	if user == nil {
 		return nil, errors.New("Invalid username")
 	}
@@ -51,23 +62,23 @@ func checkAuth(state *State, r *http.Request) (*User, error) {
 	return user, nil
 }
 
-func authMiddleware(state *State, next func(http.ResponseWriter, *http.Request, *User)) func(w http.ResponseWriter, r *http.Request) {
+func (s *Server) authMiddleware(next func(http.ResponseWriter, *http.Request, *User)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if user, err := checkAuth(state, r); err != nil {
+		if user, err := s.checkAuth(r); err != nil {
 			log.Printf("Invalid user tried to access API: %s", err)
-			writeJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
+			WriteJSONError(w, http.StatusUnauthorized, "Invalid user credentials")
 		} else {
 			next(w, r, user)
 		}
 	}
 }
 
-func jobIDMiddleware(next func(http.ResponseWriter, *http.Request, *Job)) func(w http.ResponseWriter, r *http.Request, user *User) {
+func (s *Server) jobIDMiddleware(next func(http.ResponseWriter, *http.Request, *Job)) func(w http.ResponseWriter, r *http.Request, user *User) {
 	return func(w http.ResponseWriter, r *http.Request, user *User) {
 		id := mux.Vars(r)["id"]
 		job := user.GetJob(id)
 		if job == nil {
-			writeJSONError(w, http.StatusNotFound, "invalid job ID")
+			WriteJSONError(w, http.StatusNotFound, "invalid job ID")
 			return
 		}
 
@@ -75,41 +86,21 @@ func jobIDMiddleware(next func(http.ResponseWriter, *http.Request, *Job)) func(w
 	}
 }
 
-func writeJSON(w http.ResponseWriter, statusCode int, model interface{}) {
-	if json, err := json.Marshal(model); err != nil {
-		log.Printf("Something went wrong returning a JSON response to the user %s", err)
-		writeJSONError(w, http.StatusInternalServerError, "Something went wrong") // this shouldn't fail
-	} else {
-		w.Header().Add("Content-Type", "application/json")
-		w.WriteHeader(statusCode)
-		w.Write(json)
-	}
+func (s *Server) getJob(w http.ResponseWriter, r *http.Request, job *Job) {
+	WriteJSON(w, http.StatusOK, job.AsView())
 }
 
-func writeJSONError(w http.ResponseWriter, statusCode int, errorMessage string) {
-	error := map[string]interface{}{
-		"status":  statusCode,
-		"message": errorMessage,
-	}
-
-	writeJSON(w, statusCode, error)
-}
-
-func getJob(w http.ResponseWriter, r *http.Request, job *Job) {
-	writeJSON(w, http.StatusOK, job.AsView())
-}
-
-func stopJob(w http.ResponseWriter, r *http.Request, job *Job) {
+func (s *Server) stopJob(w http.ResponseWriter, r *http.Request, job *Job) {
 	if err := job.StopJob(); err != nil {
 		log.Printf("Something went wrong stopping job: %s", err)
-		writeJSONError(w, http.StatusInternalServerError, "Failed to stop job")
+		WriteJSONError(w, http.StatusInternalServerError, "Failed to stop job")
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func getJobs(w http.ResponseWriter, r *http.Request, user *User) {
+func (s *Server) getJobs(w http.ResponseWriter, r *http.Request, user *User) {
 	jobs := user.GetAllJobs()
 	jobViews := make([]JobViewPartial, 0, len(jobs))
 
@@ -117,7 +108,7 @@ func getJobs(w http.ResponseWriter, r *http.Request, user *User) {
 		jobViews = append(jobViews, v.AsView().JobViewPartial)
 	}
 
-	writeJSON(w, http.StatusOK, jobViews)
+	WriteJSON(w, http.StatusOK, jobViews)
 }
 
 func isCommandValid(command []string) error {
@@ -157,18 +148,18 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 	return createJob.Command, nil
 }
 
-func createJob(w http.ResponseWriter, r *http.Request, user *User) {
+func (s *Server) createJob(w http.ResponseWriter, r *http.Request, user *User) {
 	command, err := parseJobCreation(r.Body)
 	if err != nil {
-		writeJSONError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command' in POST body")
+		WriteJSONError(w, http.StatusUnprocessableEntity, "Invalid or missing 'command' in POST body")
 		return
 	}
 
 	if job, err := SpawnJob(user, command); err != nil {
 		log.Printf("Failed to start job %s, because: %s", command, err)
-		writeJSONError(w, http.StatusInternalServerError, "Failed to start job")
+		WriteJSONError(w, http.StatusInternalServerError, "Failed to start job")
 	} else {
 		user.AddJob(job)
-		writeJSON(w, http.StatusCreated, job.AsView().JobViewPartial)
+		WriteJSON(w, http.StatusCreated, job.AsView().JobViewPartial)
 	}
 }
