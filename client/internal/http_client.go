@@ -46,8 +46,6 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 		return nil, errors.New("Base URI must have an HTTP basic password encoded")
 	}
 
-	// uri.User
-
 	return &HTTPClient{
 		username: uri.User.Username(),
 		token:    password,
