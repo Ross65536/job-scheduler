@@ -24,7 +24,7 @@ go test ./...
 
 ## Usage
 
-> `client` can be the compiled binary or `go run main.go`
+The backend must be running in order to use the client.
 
 The connection flag must be specified for commands other than `help`, example list command:
 ```shell
@@ -32,6 +32,8 @@ $ go run main.go list -c=http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHL
 ```
 
 The connection flag used in examples will be defined as for example `CON=-c=http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo\=@localhost:10000` (this user is present in the backend)
+
+> `client` can be the compiled binary or `go run main.go`
 
 Examples:
 - Help
