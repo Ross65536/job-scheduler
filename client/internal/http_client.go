@@ -114,7 +114,7 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 	return request, nil
 }
 
-type errorType struct {
+type ErrorType struct {
 	Status  int
 	Message string
 }
@@ -128,7 +128,7 @@ func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error 
 	}
 
 	// best case JSON parsing, return raw HTTP body otherwise
-	parsed := errorType{}
+	parsed := ErrorType{}
 	err = json.Unmarshal(body, &parsed)
 
 	if err == nil && parsed.Message != "" {

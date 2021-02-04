@@ -14,6 +14,10 @@ import (
 	"github.com/ros-k/job-manager/client/internal"
 )
 
+const (
+	jsonMime = "application/json"
+)
+
 func assertNotError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
@@ -32,8 +36,15 @@ func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	}
 }
 
-func setupTestServer(t *testing.T, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) *httptest.Server {
-	const jsonMime = "application/json"
+func assertNotEquals(t *testing.T, actual interface{}, expected interface{}) {
+	if actual == expected {
+		t.Fatalf("Invalid field, expected %s to be different from %s", expected, actual)
+	}
+}
+
+func setupTestServer(t *testing.T, returnStatusCode int, returnModel interface{}, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
+	returnJson, err := json.Marshal(returnModel)
+	assertNotError(t, err)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertEquals(t, expectedUriPath, r.URL.Path)
@@ -44,13 +55,19 @@ func setupTestServer(t *testing.T, returnJson []byte, expectedMethod, expectedUr
 		assertEquals(t, user, expectedbasicUsername)
 		assertEquals(t, pass, expectedBasicPassword)
 
-		if returnJson != nil {
+		if returnModel != nil {
 			w.Header().Set("Content-Type", jsonMime)
+			w.WriteHeader(returnStatusCode)
 			w.Write(returnJson)
 		}
 	})
 
-	return httptest.NewServer(handler)
+	server := httptest.NewServer(handler)
+
+	uri, err := url.ParseRequestURI(server.URL)
+	assertNotError(t, err)
+
+	return server, uri
 }
 
 func captureOutput(t *testing.T, f func()) string {
@@ -85,21 +102,32 @@ func TestCanShowJob(t *testing.T) {
 		Stderr: "STDERR456",
 	}
 
-	requestJson, err := json.Marshal(job)
-	assertNotError(t, err)
-
-	server := setupTestServer(t, requestJson, "GET", "/api/jobs/"+id, "user", "pass")
+	server, uri := setupTestServer(t, 200, job, "GET", "/api/jobs/"+id, "user", "pass")
 	defer server.Close()
 
-	uri, err := url.ParseRequestURI(server.URL)
-	assertNotError(t, err)
-
 	output := captureOutput(t, func() {
-		err = internal.Start([]string{"client", "show", id, "-c=http://user:pass@" + uri.Host})
+		err := internal.Start([]string{"client", "show", id, "-c=http://user:pass@" + uri.Host})
 		assertNotError(t, err)
 	})
 
 	assertContains(t, output, "RUNNING")
 	assertContains(t, output, "STDOUT123")
 	assertContains(t, output, "STDERR456")
+}
+
+func TestServerError(t *testing.T) {
+	errMsg := "Invalid creds"
+	returnError := internal.ErrorType{
+		Status:  401,
+		Message: errMsg,
+	}
+
+	server, uri := setupTestServer(t, 401, returnError, "GET", "/api/jobs", "user", "pass")
+	defer server.Close()
+
+	err := internal.Start([]string{"client", "list", "-c=http://user:pass@" + uri.Host})
+	assertNotEquals(t, err, nil)
+
+	assertContains(t, err.Error(), "401")
+	assertContains(t, err.Error(), errMsg)
 }
