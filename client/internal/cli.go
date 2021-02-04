@@ -27,7 +27,6 @@ func parseFlags(args []string) (*APIClient, []string, error) {
 		return nil, nil, fmt.Errorf("Must specify connection flag '%s'", connectionFlag)
 	}
 
-	// TODO parse os.Args for flags and filter them out of the command proper
 	httpClient, err := NewHTTPClient(url)
 	if err != nil {
 		return nil, nil, err
