@@ -47,7 +47,7 @@ Examples:
   ```shell
   $ client list $CON
   ID | STATUS | COMMAND | CREATED_AT
-  f104e7f5-4601-4e0e-a474-e17e1c375255 | FINISHED | /Users/ros65536/Code/goteleport/job-manager/scripts/long_process.sh 30 | 2021-02-03 20:16:12.52405 +0100 CET
+  f104e7f5-4601-4e0e-a474-e17e1c375255 | FINISHED | /scripts/long_process.sh 30 | 2021-02-03 20:16:12.52405 +0100 CET
   ...
   ```
 

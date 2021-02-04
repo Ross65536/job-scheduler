@@ -198,7 +198,7 @@ Example usage:
 
 - Start job
 ```shellscript
-$ jobs-manager start ls -l /
+$ jobs-manager start "ls -l /"
 1 # the ID
 ```
 
@@ -207,9 +207,9 @@ The arguments are sent as is to the backend.
 - Listing jobs
 ```shellscript
 $ jobs-manager list
-ID | STATUS | COMMAND | CREATED AT | STOPPED AT
-1 | RUNNING | ls -l / | 2020-01-01T12:01Z | -
-2 | KILLED | task 123 | 2020-01-01T12:01Z | 2020-01-02T12:01Z
+ID | STATUS | COMMAND | CREATED AT 
+1 | RUNNING | ls -l / | 2020-01-01T12:01Z
+2 | KILLED | task 123 | 2020-01-01T12:01Z 
 ```
 
 - Job details
@@ -218,7 +218,7 @@ $ jobs-manager show 1
 ls -l /, RUNNING, created: 2020-01-01T12:01Z
 
 $ jobs-manager show 2
-task 123, KILLED, created: 2020-01-01T12:01Z, stopped: 2020-01-02T12:01Z
+task 123, KILLED, created: 2020-01-01T12:01Z -> 2020-01-02T12:01Z, exit_code: 0
 
 STDOUT:
 line 1
@@ -233,7 +233,7 @@ line 2
 
 ```shellscript
 $ jobs-manager stop 1
-OK
+Stopping
 ```
 
 If the backend returns error messages these can be additionally displayed to the user, 
@@ -243,7 +243,7 @@ Flags:
 
 These will probably be hardcoded on the client instead.
 
-- The `-c` flag specifies the server location and the HTTP Basic authn for the user. This could be cached between command executions to simplify the interface. Example: `-c user1:pass1@127.0.0.1:8080`
+- The `-c` flag specifies the server location and the HTTP Basic authn for the user. This could be cached between command executions to simplify the interface. Example: `-c=http://user1:pass1@127.0.0.1:8080`
 - The `-cert` flag specifies the filepath of the server's public key. 
 
 ## Auth
