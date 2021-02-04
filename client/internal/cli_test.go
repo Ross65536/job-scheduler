@@ -32,15 +32,17 @@ func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	}
 }
 
-func setupTestServer(t *testing.T, returnJson []byte, expectedMethod, expectedUriPath string, expectedJsonBits []string) *httptest.Server {
+func setupTestServer(t *testing.T, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) *httptest.Server {
 	const jsonMime = "application/json"
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertEquals(t, expectedUriPath, r.URL.Path)
 		assertEquals(t, expectedMethod, r.Method)
 
-		// assert.Contains(t, r.Header.Get("Authorization"), "Bearer")
-		// assert.Contains(t, r.Header.Get("Authorization"), testApiKey)
+		user, pass, ok := r.BasicAuth()
+		assertEquals(t, ok, true)
+		assertEquals(t, user, expectedbasicUsername)
+		assertEquals(t, pass, expectedBasicPassword)
 
 		if returnJson != nil {
 			w.Header().Set("Content-Type", jsonMime)
@@ -86,7 +88,7 @@ func TestCanShowJob(t *testing.T) {
 	requestJson, err := json.Marshal(job)
 	assertNotError(t, err)
 
-	server := setupTestServer(t, requestJson, "GET", "/api/jobs/"+id, nil)
+	server := setupTestServer(t, requestJson, "GET", "/api/jobs/"+id, "user", "pass")
 	defer server.Close()
 
 	uri, err := url.ParseRequestURI(server.URL)
