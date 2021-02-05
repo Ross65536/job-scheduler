@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"net/url"
 )
 
 type APIClient struct {
@@ -21,7 +22,7 @@ func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
 }
 
 func (api *APIClient) ShowJob(id string) (*JobViewFull, error) {
-	resp, err := api.HTTPClient.Get("api", "jobs", id)
+	resp, err := api.HTTPClient.Get("api", "jobs", url.PathEscape(id))
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +52,6 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 }
 
 func (api *APIClient) StopJob(id string) error {
-	_, err := api.HTTPClient.Delete("api", "jobs", id)
+	_, err := api.HTTPClient.Delete("api", "jobs", url.PathEscape(id))
 	return err
 }

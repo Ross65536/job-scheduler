@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
+	"path"
 )
 
 const (
@@ -86,28 +86,14 @@ func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, p
 	return ReadCloseableBuffer(response.Body)
 }
 
-func (c *HTTPClient) joinPathFragments(pathSegments []string) (string, error) {
-	encodedPaths := make([]string, len(pathSegments))
-	for i, pathSegment := range pathSegments {
-		if IsWhitespaceString(pathSegment) {
-			return "", errors.New("invalid uri path segment: " + pathSegment)
-		}
+func (c *HTTPClient) joinPathFragments(pathSegments []string) string {
+	encodedPaths := path.Join(pathSegments...)
 
-		encodedPaths[i] = url.PathEscape(pathSegment)
-	}
-
-	return c.apiUrl.String() + "/" + strings.Join(encodedPaths, "/"), nil
+	return c.apiUrl.String() + "/" + encodedPaths
 }
 
 func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, requestBody []byte) (*http.Request, error) {
-	if requestMethod != http.MethodGet && requestMethod != http.MethodPost && requestMethod != http.MethodPut && requestMethod != http.MethodDelete {
-		return nil, errors.New("unsupported HTTP method")
-	}
-
-	requestURI, err := c.joinPathFragments(pathSegments)
-	if err != nil {
-		return nil, err
-	}
+	requestURI := c.joinPathFragments(pathSegments)
 
 	request, err := http.NewRequest(requestMethod, requestURI, bytes.NewBuffer(requestBody))
 	if err != nil {
