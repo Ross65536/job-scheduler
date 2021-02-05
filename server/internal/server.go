@@ -132,7 +132,6 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 	}
 
 	createJob := JobViewCommand{}
-	// var createJob JobCreateModel
 	if err := json.Unmarshal(reqBody, &createJob); err != nil {
 		return nil, err
 	}

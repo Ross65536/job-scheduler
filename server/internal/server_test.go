@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -29,7 +27,7 @@ func buildDefaultUser() httpBasic {
 
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	if actual != expected {
-		t.Fatalf("Invalid field, expected %s, was %s", expected, actual)
+		t.Fatalf("Invalid field, expected %v, was %v", expected, actual)
 	}
 }
 
@@ -55,9 +53,7 @@ func makeRequestWithHttpBasic(t *testing.T, basic httpBasic, method, url, body s
 	resp, err := client.Do(req)
 	assertNotError(t, err)
 
-	if resp.StatusCode != expectedStatus {
-		t.Fatalf("Received non-%d response: %d\n", expectedStatus, resp.StatusCode)
-	}
+	assertEquals(t, resp.StatusCode, expectedStatus)
 
 	return resp
 }
@@ -84,13 +80,11 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
-func setupTest(basic httpBasic) (*internal.State, *httptest.Server) {
+func setupTest(t *testing.T, basic httpBasic) (*internal.State, *httptest.Server) {
 	state := internal.NewState()
 	state.AddUser(basic.username, basic.password)
 	server, err := internal.NewServer(state)
-	if err != nil {
-		log.Fatalf("Failed to setup test %s", err)
-	}
+	assertNotError(t, err)
 
 	router := server.GetRouter()
 	return state, httptest.NewServer(router)
@@ -104,10 +98,12 @@ func teardownTest(state *internal.State, server *httptest.Server) {
 func TestCanCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
-	command := `{"command": ["ls", "/"]}`
+	targetStr := "foobaz"
+
+	command := `{"command": ["sh", "-c", "echo '` + targetStr + `'"]}`
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 201)
 	jsonResponse := parseJsonObj(t, resp)
 	assertEquals(t, jsonResponse["status"], "RUNNING")
@@ -118,14 +114,13 @@ func TestCanCreateJob(t *testing.T) {
 		resp = makeRequestWithHttpBasic(t, basic, "GET", server.URL+"/api/jobs/"+id, "", 200)
 		jsonResponse = parseJsonObj(t, resp)
 		status := jsonResponse["status"].(string)
-		if status != "FINISHED" {
+
+		if status != string(internal.JobFinished) {
 			return false
 		}
 
 		stdout := jsonResponse["stdout"].(string)
-		if !strings.Contains(stdout, "etc") { // assuming all tests environs have this folder
-			t.Fatal("Finished job returned unexpected result")
-		}
+		assertEquals(t, stdout, targetStr+"\n")
 
 		return true
 	})
@@ -134,7 +129,7 @@ func TestCanCreateJob(t *testing.T) {
 func TestFailToCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
@@ -146,7 +141,7 @@ func TestFailToCreateJob(t *testing.T) {
 func TestInvalidAuth(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
 	invalidAuth := httpBasic{

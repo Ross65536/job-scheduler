@@ -3,12 +3,11 @@ package internal
 import (
 	"io"
 	"log"
+	"os"
 	"os/exec"
 )
 
-const (
-	bufSize = 256
-)
+var bufSize = os.Getpagesize()
 
 func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
 	buffer := make([]byte, bufSize)
@@ -39,11 +38,9 @@ func waitJob(job *Job, cmd *exec.Cmd, stdout, stderr io.Reader) {
 	go readPipe(job.UpdateStderr, stderr, waiter)
 
 	for i := 0; i < cap(waiter); i++ {
-		select {
-		case err := <-waiter:
-			if err != nil {
-				log.Printf("Something went wrong reading from pipe %s", err)
-			}
+		err := <-waiter
+		if err != nil {
+			log.Printf("Something went wrong reading from pipe %s", err)
 		}
 	}
 
