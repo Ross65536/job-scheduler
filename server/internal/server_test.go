@@ -121,9 +121,6 @@ func TestCanCreateJob(t *testing.T) {
 
 		stdout := jsonResponse["stdout"].(string)
 		assertEquals(t, stdout, targetStr+"\n")
-		// if !strings.Contains(stdout, "etc") { // assuming all tests environs have this folder
-		// 	t.Fatal("Finished job returned unexpected result")
-		// }
 
 		return true
 	})
