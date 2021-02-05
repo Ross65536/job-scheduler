@@ -2,6 +2,8 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"net/url"
 )
 
@@ -9,10 +11,31 @@ type APIClient struct {
 	HTTPClient *HTTPClient
 }
 
+type ErrorType struct {
+	Status  int
+	Message string
+}
+
+func buildResponseError(code int, body []byte) error {
+	// best case JSON parsing, return raw HTTP body otherwise
+	parsed := ErrorType{}
+	err := json.Unmarshal(body, &parsed)
+
+	if err == nil && parsed.Message != "" {
+		return fmt.Errorf("an error occurred (HTTP %d): %s", code, parsed.Message)
+	} else {
+		return fmt.Errorf("an error occurred (HTTP %d): %s", code, string(body))
+	}
+}
+
 func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
-	resp, err := api.HTTPClient.Get("api", "jobs")
+	status, resp, err := api.HTTPClient.Get("api", "jobs")
 	if err != nil {
 		return nil, err
+	}
+
+	if http.StatusOK != status {
+		return nil, buildResponseError(status, resp)
 	}
 
 	jobs := []*JobViewPartial{}
@@ -22,9 +45,13 @@ func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
 }
 
 func (api *APIClient) ShowJob(id string) (*JobViewFull, error) {
-	resp, err := api.HTTPClient.Get("api", "jobs", url.PathEscape(id))
+	status, resp, err := api.HTTPClient.Get("api", "jobs", url.PathEscape(id))
 	if err != nil {
 		return nil, err
+	}
+
+	if http.StatusOK != status {
+		return nil, buildResponseError(status, resp)
 	}
 
 	job := JobViewFull{}
@@ -40,9 +67,13 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 		return nil, err
 	}
 
-	resp, err := api.HTTPClient.Post(requestJson, "api", "jobs")
+	status, resp, err := api.HTTPClient.Post(requestJson, "api", "jobs")
 	if err != nil {
 		return nil, err
+	}
+
+	if http.StatusCreated != status {
+		return nil, buildResponseError(status, resp)
 	}
 
 	respJob := JobViewPartial{}
@@ -52,6 +83,14 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 }
 
 func (api *APIClient) StopJob(id string) error {
-	_, err := api.HTTPClient.Delete("api", "jobs", url.PathEscape(id))
-	return err
+	status, resp, err := api.HTTPClient.Delete("api", "jobs", url.PathEscape(id))
+	if err != nil {
+		return err
+	}
+
+	if http.StatusNoContent != status {
+		return buildResponseError(status, resp)
+	}
+
+	return nil
 }

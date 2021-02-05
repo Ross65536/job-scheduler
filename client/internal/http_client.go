@@ -2,9 +2,7 @@ package internal
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -54,36 +52,32 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 	}, nil
 }
 
-func (c *HTTPClient) Get(pathSegments ...string) (returnBody []byte, err error) {
+func (c *HTTPClient) Get(pathSegments ...string) (statusCode int, returnBody []byte, err error) {
 	return c.makeJSONRequest(http.MethodGet, nil, pathSegments...)
 }
 
-func (c *HTTPClient) Post(requestBody []byte, pathSegments ...string) (returnBody []byte, err error) {
+func (c *HTTPClient) Post(requestBody []byte, pathSegments ...string) (statusCode int, returnBody []byte, err error) {
 	return c.makeJSONRequest(http.MethodPost, requestBody, pathSegments...)
 }
 
-func (c *HTTPClient) Delete(pathSegments ...string) (returnBody []byte, err error) {
+func (c *HTTPClient) Delete(pathSegments ...string) (statusCode int, returnBody []byte, err error) {
 	return c.makeJSONRequest(http.MethodDelete, nil, pathSegments...)
 }
 
-func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, pathSegments ...string) (returnBody []byte, err error) {
+func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, pathSegments ...string) (statusCode int, returnBody []byte, err error) {
 	request, err := c.buildRequest(requestMethod, pathSegments, requestBody)
 	if err != nil {
-		return nil, err
+		return -1, nil, err
 	}
 
 	response, err := httpClient.Do(request)
 	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode/100 != 2 {
-		return nil, c.buildProtocolErrorMessage(response)
+		return -1, nil, err
 	}
 
 	// TODO add checks for Content-Type header, etc
-
-	return ReadCloseableBuffer(response.Body)
+	resp, err := ReadCloseableBuffer(response.Body)
+	return response.StatusCode, resp, err
 }
 
 func (c *HTTPClient) joinPathFragments(pathSegments []string) string {
@@ -109,28 +103,4 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 	}
 
 	return request, nil
-}
-
-type ErrorType struct {
-	Status  int
-	Message string
-}
-
-func (api *HTTPClient) buildProtocolErrorMessage(response *http.Response) error {
-	code := response.StatusCode
-
-	body, err := ReadCloseableBuffer(response.Body)
-	if err != nil {
-		return fmt.Errorf("An error occurred (HTTP %d), failed reading HTTP response: %s", code, err)
-	}
-
-	// best case JSON parsing, return raw HTTP body otherwise
-	parsed := ErrorType{}
-	err = json.Unmarshal(body, &parsed)
-
-	if err == nil && parsed.Message != "" {
-		return fmt.Errorf("An error occurred (HTTP %d): %s", code, parsed.Message)
-	} else {
-		return fmt.Errorf("An error occurred (HTTP %d): %s", code, string(body))
-	}
 }
