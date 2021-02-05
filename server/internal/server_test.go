@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -102,7 +101,9 @@ func TestCanCreateJob(t *testing.T) {
 	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
-	command := `{"command": ["ls", "/"]}`
+	targetStr := "foobaz"
+
+	command := `{"command": ["sh", "-c", "echo '` + targetStr + `'"]}`
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 201)
 	jsonResponse := parseJsonObj(t, resp)
 	assertEquals(t, jsonResponse["status"], "RUNNING")
@@ -119,9 +120,10 @@ func TestCanCreateJob(t *testing.T) {
 		}
 
 		stdout := jsonResponse["stdout"].(string)
-		if !strings.Contains(stdout, "etc") { // assuming all tests environs have this folder
-			t.Fatal("Finished job returned unexpected result")
-		}
+		assertEquals(t, stdout, targetStr+"\n")
+		// if !strings.Contains(stdout, "etc") { // assuming all tests environs have this folder
+		// 	t.Fatal("Finished job returned unexpected result")
+		// }
 
 		return true
 	})
