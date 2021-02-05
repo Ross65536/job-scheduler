@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"bytes"
 	"io"
+	"io/ioutil"
 	"strings"
 )
 
@@ -11,14 +11,13 @@ func IsWhitespaceString(value string) bool {
 }
 
 func ReadCloseableBuffer(buffer io.ReadCloser) ([]byte, error) {
-	byteBuffer := bytes.Buffer{}
-	if _, err := byteBuffer.ReadFrom(buffer); err != nil {
+	// close errors are ignored, since all data should be available
+	defer buffer.Close()
+
+	buf, err := ioutil.ReadAll(buffer)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := buffer.Close(); err != nil {
-		return nil, err
-	}
-
-	return byteBuffer.Bytes(), nil
+	return buf, nil
 }
