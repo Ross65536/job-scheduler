@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,34 +19,9 @@ const (
 	jsonMime = "application/json"
 )
 
-func assertNotError(t *testing.T, err error) {
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func assertContains(t *testing.T, actual, substr string) {
-	if !strings.Contains(actual, substr) {
-		t.Fatalf("String %s doesn't contain %s", actual, substr)
-	}
-}
-
-func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
-
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("Invalid field, expected %s, was %s", expected, actual)
-	}
-}
-
-func assertNotEquals(t *testing.T, actual interface{}, expected interface{}) {
-	if reflect.DeepEqual(actual, expected) {
-		t.Fatalf("Invalid field, expected %s to be different from %s", expected, actual)
-	}
-}
-
 func encodeModel(t *testing.T, model interface{}) []byte {
 	returnJson, err := json.Marshal(model)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	return returnJson
 }
@@ -56,13 +29,13 @@ func encodeModel(t *testing.T, model interface{}) []byte {
 func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assertEquals(t, expectedUriPath, r.URL.Path)
-		assertEquals(t, expectedMethod, r.Method)
+		core.AssertEquals(t, expectedUriPath, r.URL.Path)
+		core.AssertEquals(t, expectedMethod, r.Method)
 
 		user, pass, ok := r.BasicAuth()
-		assertEquals(t, ok, true)
-		assertEquals(t, user, expectedbasicUsername)
-		assertEquals(t, pass, expectedBasicPassword)
+		core.AssertEquals(t, ok, true)
+		core.AssertEquals(t, user, expectedbasicUsername)
+		core.AssertEquals(t, pass, expectedBasicPassword)
 
 		if returnJson != nil {
 			w.Header().Set("Content-Type", jsonMime)
@@ -74,7 +47,7 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 	server := httptest.NewServer(handler)
 
 	uri, err := url.ParseRequestURI(server.URL)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	return server, uri
 }
@@ -99,10 +72,10 @@ func TestCanShowJob(t *testing.T) {
 
 	buf := bytes.Buffer{}
 	err := client.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	output, err := ioutil.ReadAll(&buf)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	expected := `ls -l /, RUNNING, 2020-03-02 04:04:04 +0000 UTC -> <nil>, exit_code: -
 
@@ -113,7 +86,7 @@ STDERR:
 STDERR456
 `
 
-	assertEquals(t, string(output), expected)
+	core.AssertEquals(t, string(output), expected)
 }
 
 func TestServerError(t *testing.T) {
@@ -126,7 +99,7 @@ func TestServerError(t *testing.T) {
 	defer server.Close()
 
 	err := client.Start(os.Stdout, []string{"client", "-c=http://user:pass@" + uri.Host, "list"})
-	assertNotEquals(t, err, nil)
+	core.AssertNotEquals(t, err, nil)
 
-	assertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
+	core.AssertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
 }

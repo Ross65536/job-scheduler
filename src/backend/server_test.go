@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ros-k/job-manager/src/backend"
+	"github.com/ros-k/job-manager/src/core"
 )
 
 type httpBasic struct {
@@ -25,18 +26,6 @@ func buildDefaultUser() httpBasic {
 	}
 }
 
-func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
-	if actual != expected {
-		t.Fatalf("Invalid field, expected %v, was %v", expected, actual)
-	}
-}
-
-func assertNotError(t *testing.T, err error) {
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 var client = http.Client{}
 
 func makeRequestWithHttpBasic(t *testing.T, basic httpBasic, method, url, body string, expectedStatus int) *http.Response {
@@ -46,25 +35,25 @@ func makeRequestWithHttpBasic(t *testing.T, basic httpBasic, method, url, body s
 	}
 
 	req, err := http.NewRequest(method, url, bodyReader)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	req.SetBasicAuth(basic.username, basic.password)
 
 	resp, err := client.Do(req)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
-	assertEquals(t, resp.StatusCode, expectedStatus)
+	core.AssertEquals(t, resp.StatusCode, expectedStatus)
 
 	return resp
 }
 
 func parseJsonObj(t *testing.T, resp *http.Response) map[string]interface{} {
 	reqBody, err := ioutil.ReadAll(resp.Body)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	var jsonResponse map[string]interface{}
 	err = json.Unmarshal(reqBody, &jsonResponse)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	return jsonResponse
 }
@@ -84,7 +73,7 @@ func setupTest(t *testing.T, basic httpBasic) (*backend.State, *httptest.Server)
 	state := backend.NewState()
 	state.AddUser(basic.username, basic.password)
 	server, err := backend.NewServer(state)
-	assertNotError(t, err)
+	core.AssertNotError(t, err)
 
 	router := server.GetRouter()
 	return state, httptest.NewServer(router)
@@ -106,7 +95,7 @@ func TestCanCreateJob(t *testing.T) {
 	command := `{"command": ["sh", "-c", "echo '` + targetStr + `'"]}`
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 201)
 	jsonResponse := parseJsonObj(t, resp)
-	assertEquals(t, jsonResponse["status"], "RUNNING")
+	core.AssertEquals(t, jsonResponse["status"], "RUNNING")
 
 	id := jsonResponse["id"].(string)
 
@@ -120,7 +109,7 @@ func TestCanCreateJob(t *testing.T) {
 		}
 
 		stdout := jsonResponse["stdout"].(string)
-		assertEquals(t, stdout, targetStr+"\n")
+		core.AssertEquals(t, stdout, targetStr+"\n")
 
 		return true
 	})
@@ -135,7 +124,7 @@ func TestFailToCreateJob(t *testing.T) {
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
 	resp := makeRequestWithHttpBasic(t, basic, "POST", server.URL+"/api/jobs", command, 500)
 	jsonResponse := parseJsonObj(t, resp)
-	assertEquals(t, jsonResponse["status"], 500.0)
+	core.AssertEquals(t, jsonResponse["status"], 500.0)
 }
 
 func TestInvalidAuth(t *testing.T) {
