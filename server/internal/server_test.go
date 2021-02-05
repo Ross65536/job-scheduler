@@ -29,7 +29,7 @@ func buildDefaultUser() httpBasic {
 
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	if actual != expected {
-		t.Fatalf("Invalid field, expected %s, was %s", expected, actual)
+		t.Fatalf("Invalid field, expected %v, was %v", expected, actual)
 	}
 }
 
