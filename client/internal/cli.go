@@ -18,7 +18,7 @@ const (
 
 func parseArgs(args []string) (*APIClient, []string, error) {
 	if len(args) < 2 {
-		return nil, nil, errors.New("Invalid usage, must specify command")
+		return nil, nil, errors.New("invalid usage, must specify command")
 	}
 
 	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
@@ -70,7 +70,7 @@ func displayJobList(jobs []*JobViewPartial) {
 
 func listTask(api *APIClient, commandRest []string) error {
 	if len(commandRest) != 0 {
-		return errors.New("Too many args")
+		return errors.New("too many args")
 	}
 
 	jobs, err := api.ListJobs()
@@ -84,7 +84,7 @@ func listTask(api *APIClient, commandRest []string) error {
 
 func showTask(api *APIClient, commandRest []string) error {
 	if len(commandRest) != 1 {
-		return errors.New("Must specify ID")
+		return errors.New("must specify ID")
 	}
 
 	id := commandRest[0]
@@ -102,7 +102,7 @@ func showTask(api *APIClient, commandRest []string) error {
 
 func stopTask(api *APIClient, commandRest []string) error {
 	if len(commandRest) != 1 {
-		return errors.New("Must specify ID")
+		return errors.New("must specify ID")
 	}
 
 	id := commandRest[0]
@@ -118,7 +118,7 @@ func stopTask(api *APIClient, commandRest []string) error {
 
 func startTask(api *APIClient, commandRest []string) error {
 	if len(commandRest) < 1 {
-		return errors.New("Must specify job to start")
+		return errors.New("must specify job to start")
 	}
 
 	job, err := api.StartJob(commandRest)
@@ -167,6 +167,6 @@ func Start(args []string) error {
 	case "stop":
 		return stopTask(api, argsRest)
 	default:
-		return errors.New("Unknown command " + task)
+		return errors.New("unknown command " + task)
 	}
 }

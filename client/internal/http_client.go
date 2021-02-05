@@ -33,17 +33,18 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 		return nil, errors.New("uri must be absolute")
 	}
 
-	if uri.Scheme != "http" && uri.Scheme != "https" {
-		return nil, errors.New("Invalid url scheme")
+	// use https when supported
+	if uri.Scheme != "http" {
+		return nil, errors.New("invalid url scheme")
 	}
 
 	if uri.User == nil {
-		return nil, errors.New("Base URI must have an HTTP basic username and password encoded")
+		return nil, errors.New("base URI must have an HTTP basic username and password encoded")
 	}
 
 	password, ok := uri.User.Password()
 	if !ok {
-		return nil, errors.New("Base URI must have an HTTP basic password encoded")
+		return nil, errors.New("base URI must have an HTTP basic password encoded")
 	}
 
 	return &HTTPClient{
@@ -89,7 +90,7 @@ func (c *HTTPClient) joinPathFragments(pathSegments []string) (string, error) {
 	encodedPaths := make([]string, len(pathSegments))
 	for i, pathSegment := range pathSegments {
 		if IsWhitespaceString(pathSegment) {
-			return "", errors.New("Invalid uri path segment: " + pathSegment)
+			return "", errors.New("invalid uri path segment: " + pathSegment)
 		}
 
 		encodedPaths[i] = url.PathEscape(pathSegment)
@@ -100,7 +101,7 @@ func (c *HTTPClient) joinPathFragments(pathSegments []string) (string, error) {
 
 func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, requestBody []byte) (*http.Request, error) {
 	if requestMethod != http.MethodGet && requestMethod != http.MethodPost && requestMethod != http.MethodPut && requestMethod != http.MethodDelete {
-		return nil, errors.New("Unsupported HTTP method")
+		return nil, errors.New("unsupported HTTP method")
 	}
 
 	requestURI, err := c.joinPathFragments(pathSegments)
