@@ -3,15 +3,14 @@ package internal
 import (
 	"io"
 	"log"
+	"os"
 	"os/exec"
 )
 
-const (
-	bufSize = 4096 // default page size on many systems
-)
+var pageSize = os.Getpagesize()
 
 func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
-	buffer := make([]byte, bufSize)
+	buffer := make([]byte, pageSize)
 
 	for {
 		n, err := r.Read(buffer)
