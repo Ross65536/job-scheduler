@@ -14,12 +14,14 @@ const (
 	defaultURL     = "http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
 )
 
-func parseArgs() (*APIClient, []string, error) {
-	url := flag.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
+func parseArgs(args []string) (*APIClient, []string, error) {
+	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
 
-	flag.Parse()
+	url := flags.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
 
-	filteredArgs := flag.Args()
+	flags.Parse(args)
+
+	filteredArgs := flags.Args()
 	if len(filteredArgs) < 1 {
 		return nil, nil, errors.New("Invalid usage, must specify command")
 	}
@@ -35,7 +37,7 @@ func parseArgs() (*APIClient, []string, error) {
 	}
 	api := APIClient{httpClient}
 
-	return &api, flag.Args(), nil
+	return &api, filteredArgs, nil
 }
 
 func intToStr(num *int) string {
@@ -138,8 +140,8 @@ func printHelp() {
 	`)
 }
 
-func Start() error {
-	api, filteredArgs, err := parseArgs()
+func Start(args []string) error {
+	api, filteredArgs, err := parseArgs(args)
 
 	if api == nil && filteredArgs == nil && err == nil {
 		return nil

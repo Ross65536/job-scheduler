@@ -9,7 +9,7 @@ import (
 
 func main() {
 	args := os.Args
-	if err := internal.Start(); err != nil {
+	if err := internal.Start(args); err != nil {
 		log.Fatalf("Failed to start command: %v, because: %v", args[1:], err)
 	}
 }
