@@ -7,10 +7,10 @@ import (
 	"os/exec"
 )
 
-var pageSize = os.Getpagesize()
+var bufSize = os.Getpagesize()
 
 func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
-	buffer := make([]byte, pageSize)
+	buffer := make([]byte, bufSize)
 
 	for {
 		n, err := r.Read(buffer)
