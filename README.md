@@ -13,7 +13,7 @@ There are useful scripts in the `scripts` directory for testing the behavior of 
 
 ## Instructions
 
-You need to clone the repository into your `GOPATH` env var (which needs to be set).
+You need to clone the repository into your `GOPATH` env var folder (which needs to be set).
 
 If your `GOPATH` is `~/go` you need to clone into `~/go/src/github.com/ros-k/job-manager`
 
@@ -37,7 +37,7 @@ go install ./...
 ~/go/bin/server
 ```
 
-- Running
+- Running:
 ```shell
 # client
 go run src/cmd/client/main.go
