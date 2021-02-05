@@ -53,7 +53,19 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 	}, nil
 }
 
-func (c *HTTPClient) MakeJSONRequest(requestMethod string, requestBody []byte, pathSegments ...string) (returnBody []byte, err error) {
+func (c *HTTPClient) Get(pathSegments ...string) (returnBody []byte, err error) {
+	return c.makeJSONRequest(http.MethodGet, nil, pathSegments...)
+}
+
+func (c *HTTPClient) Post(requestBody []byte, pathSegments ...string) (returnBody []byte, err error) {
+	return c.makeJSONRequest(http.MethodPost, requestBody, pathSegments...)
+}
+
+func (c *HTTPClient) Delete(pathSegments ...string) (returnBody []byte, err error) {
+	return c.makeJSONRequest(http.MethodDelete, nil, pathSegments...)
+}
+
+func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, pathSegments ...string) (returnBody []byte, err error) {
 	request, err := c.buildRequest(requestMethod, pathSegments, requestBody)
 	if err != nil {
 		return nil, err

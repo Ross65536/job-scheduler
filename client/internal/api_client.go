@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
 type APIClient struct {
@@ -10,7 +9,7 @@ type APIClient struct {
 }
 
 func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
-	resp, err := api.HTTPClient.MakeJSONRequest(http.MethodGet, nil, "api", "jobs")
+	resp, err := api.HTTPClient.Get("api", "jobs")
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +21,7 @@ func (api *APIClient) ListJobs() ([]*JobViewPartial, error) {
 }
 
 func (api *APIClient) ShowJob(id string) (*JobViewFull, error) {
-	resp, err := api.HTTPClient.MakeJSONRequest(http.MethodGet, nil, "api", "jobs", id)
+	resp, err := api.HTTPClient.Get("api", "jobs", id)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +39,7 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 		return nil, err
 	}
 
-	resp, err := api.HTTPClient.MakeJSONRequest(http.MethodPost, requestJson, "api", "jobs")
+	resp, err := api.HTTPClient.Post(requestJson, "api", "jobs")
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +51,6 @@ func (api *APIClient) StartJob(command []string) (*JobViewPartial, error) {
 }
 
 func (api *APIClient) StopJob(id string) error {
-	_, err := api.HTTPClient.MakeJSONRequest(http.MethodDelete, nil, "api", "jobs", id)
+	_, err := api.HTTPClient.Delete("api", "jobs", id)
 	return err
 }
