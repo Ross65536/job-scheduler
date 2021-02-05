@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -31,13 +32,14 @@ func assertContains(t *testing.T, actual, substr string) {
 }
 
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
-	if actual != expected {
+
+	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Invalid field, expected %s, was %s", expected, actual)
 	}
 }
 
 func assertNotEquals(t *testing.T, actual interface{}, expected interface{}) {
-	if actual == expected {
+	if reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Invalid field, expected %s to be different from %s", expected, actual)
 	}
 }
