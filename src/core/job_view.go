@@ -15,8 +15,8 @@ type JobViewPartial struct {
 
 type JobViewFull struct {
 	JobViewPartial
-	Stdout    string     `json:"stdout"`
-	Stderr    string     `json:"stderr"`
+	Stdout    string     `json:"stdout,omitempty"`
+	Stderr    string     `json:"stderr,omitempty"`
 	ExitCode  *int       `json:"exit_code,omitempty"`
 	StoppedAt *time.Time `json:"stopped_at,omitempty"`
 }
