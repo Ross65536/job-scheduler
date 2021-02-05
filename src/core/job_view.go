@@ -1,6 +1,11 @@
 package core
 
-import "time"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
 
 type JobViewCommand struct {
 	Command []string `json:"command"`
@@ -19,4 +24,17 @@ type JobViewFull struct {
 	Stderr    string     `json:"stderr,omitempty"`
 	ExitCode  *int       `json:"exit_code,omitempty"`
 	StoppedAt *time.Time `json:"stopped_at,omitempty"`
+}
+
+func intToStr(num *int) string {
+	if num == nil {
+		return "-"
+	}
+
+	return strconv.Itoa(*num)
+}
+
+func (job *JobViewFull) String() string {
+	return fmt.Sprintf("%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s",
+		strings.Join(job.Command, " "), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -43,14 +42,6 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	api := APIClient{httpClient}
 
 	return &api, filteredArgs, nil
-}
-
-func intToStr(num *int) string {
-	if num == nil {
-		return "-"
-	}
-
-	return strconv.Itoa(*num)
 }
 
 func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
@@ -96,8 +87,7 @@ func showTask(out io.Writer, api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	fmt.Fprintf(out, "%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n",
-		strings.Join(job.Command, " "), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
+	fmt.Fprintln(out, job)
 
 	return nil
 }
