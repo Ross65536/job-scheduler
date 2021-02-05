@@ -10,6 +10,6 @@ import (
 func main() {
 	args := os.Args
 	if err := internal.Start(args); err != nil {
-		log.Fatalf("Failed to start command: %v, because: %v", args[1:], err)
+		log.Fatalf("Failed to run because: %v", err)
 	}
 }
