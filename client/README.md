@@ -43,7 +43,7 @@ Examples:
   ...
   ```
 
-- List All Job
+- List All Jobs
   ```shell
   $ client list $CON
   ID | STATUS | COMMAND | CREATED_AT
