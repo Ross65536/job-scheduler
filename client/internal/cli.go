@@ -57,10 +57,11 @@ func displayJobList(jobs []*JobViewPartial) {
 		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
 	})
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
-	fmt.Println("ID \t| STATUS\t | COMMAND\t | CREATED_AT")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(w, "ID\tSTATUS\tCOMMAND\tCREATED_AT\t")
 	for _, job := range jobs {
-		fmt.Printf("%s \t| %s\t | %s\t | %s\t \n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
+		str := fmt.Sprintf("%s\t%s\t%s\t%s\t", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
+		fmt.Fprintln(w, str)
 	}
 	w.Flush()
 
