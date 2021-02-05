@@ -44,9 +44,14 @@ func assertNotEquals(t *testing.T, actual interface{}, expected interface{}) {
 	}
 }
 
-func setupTestServer(t *testing.T, returnStatusCode int, returnModel interface{}, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
-	returnJson, err := json.Marshal(returnModel)
+func encodeModel(t *testing.T, model interface{}) []byte {
+	returnJson, err := json.Marshal(model)
 	assertNotError(t, err)
+
+	return returnJson
+}
+
+func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertEquals(t, expectedUriPath, r.URL.Path)
@@ -57,7 +62,7 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnModel interface{}
 		assertEquals(t, user, expectedbasicUsername)
 		assertEquals(t, pass, expectedBasicPassword)
 
-		if returnModel != nil {
+		if returnJson != nil {
 			w.Header().Set("Content-Type", jsonMime)
 			w.WriteHeader(returnStatusCode)
 			w.Write(returnJson)
@@ -104,7 +109,7 @@ func TestCanShowJob(t *testing.T) {
 		Stderr: "STDERR456",
 	}
 
-	server, uri := setupTestServer(t, 200, job, "GET", "/api/jobs/"+id, "user", "pass")
+	server, uri := setupTestServer(t, 200, encodeModel(t, job), "GET", "/api/jobs/"+id, "user", "pass")
 	defer server.Close()
 
 	output := captureOutput(t, func() {
@@ -123,7 +128,7 @@ func TestServerError(t *testing.T) {
 		Message: "Invalid creds",
 	}
 
-	server, uri := setupTestServer(t, 401, returnError, "GET", "/api/jobs", "user", "pass")
+	server, uri := setupTestServer(t, 401, encodeModel(t, returnError), "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
 	err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "list"})
