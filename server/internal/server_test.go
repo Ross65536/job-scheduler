@@ -113,7 +113,8 @@ func TestCanCreateJob(t *testing.T) {
 		resp = makeRequestWithHttpBasic(t, basic, "GET", server.URL+"/api/jobs/"+id, "", 200)
 		jsonResponse = parseJsonObj(t, resp)
 		status := jsonResponse["status"].(string)
-		if status != "FINISHED" {
+
+		if status != string(internal.JobFinished) {
 			return false
 		}
 

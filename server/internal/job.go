@@ -12,11 +12,11 @@ import (
 type JobStatus string
 
 const (
-	jobRunning  JobStatus = "RUNNING"
-	jobFinished JobStatus = "FINISHED"
-	jobStopped  JobStatus = "STOPPED"
-	jobStopping JobStatus = "STOPPING"
-	jobKilled   JobStatus = "KILLED"
+	JobRunning  JobStatus = "RUNNING"
+	JobFinished JobStatus = "FINISHED"
+	JobStopped  JobStatus = "STOPPED"
+	JobStopping JobStatus = "STOPPING"
+	JobKilled   JobStatus = "KILLED"
 )
 
 type Job struct {
@@ -37,7 +37,7 @@ func CreateJob(command []string, proc *os.Process) *Job {
 		id:        uuid.NewString(),
 		proc:      proc,
 		command:   command,
-		status:    jobRunning,
+		status:    JobRunning,
 		createdAt: time.Now(),
 	}
 }
@@ -64,7 +64,7 @@ func (j *Job) UpdateStderr(bytes []byte) {
 }
 
 func (j *Job) isExecutingLocked() bool {
-	return j.status == jobRunning || j.status == jobStopping
+	return j.status == JobRunning || j.status == JobStopping
 }
 
 func (j *Job) endJobLocked(status JobStatus) {
@@ -76,10 +76,10 @@ func (j *Job) MarkAsStopped() {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	if j.status == jobStopping {
-		j.endJobLocked(jobStopped)
+	if j.status == JobStopping {
+		j.endJobLocked(JobStopped)
 	} else {
-		j.endJobLocked(jobKilled)
+		j.endJobLocked(JobKilled)
 	}
 }
 
@@ -87,14 +87,14 @@ func (j *Job) MarkAsKilled() {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	j.endJobLocked(jobKilled)
+	j.endJobLocked(JobKilled)
 }
 
 func (j *Job) MarkAsFinished(exitCode int) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	j.endJobLocked(jobFinished)
+	j.endJobLocked(JobFinished)
 	j.exitCode = &exitCode
 }
 
@@ -107,7 +107,7 @@ func (j *Job) StopJob() error {
 	}
 
 	var signal os.Signal = syscall.SIGTERM
-	if j.status == jobStopping {
+	if j.status == JobStopping {
 		signal = os.Kill
 	}
 
@@ -115,8 +115,8 @@ func (j *Job) StopJob() error {
 		return err
 	}
 
-	if j.status == jobRunning {
-		j.status = jobStopping
+	if j.status == JobRunning {
+		j.status = JobStopping
 	}
 
 	return nil
