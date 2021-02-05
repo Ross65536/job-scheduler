@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	bufSize = 256
+	bufSize = 4096 // default page size on many systems
 )
 
 func readPipe(consumer func([]byte), r io.Reader, ch chan<- error) {
