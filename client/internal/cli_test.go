@@ -106,7 +106,7 @@ func TestCanShowJob(t *testing.T) {
 	defer server.Close()
 
 	output := captureOutput(t, func() {
-		err := internal.Start([]string{"-c=http://user:pass@" + uri.Host, "show", id})
+		err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
 		assertNotError(t, err)
 	})
 
@@ -125,7 +125,7 @@ func TestServerError(t *testing.T) {
 	server, uri := setupTestServer(t, 401, returnError, "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
-	err := internal.Start([]string{"-c=http://user:pass@" + uri.Host, "list"})
+	err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "list"})
 	assertNotEquals(t, err, nil)
 
 	assertContains(t, err.Error(), "401")
