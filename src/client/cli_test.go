@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ros-k/job-manager/src/client"
+	"github.com/ros-k/job-manager/src/core"
 )
 
 const (
@@ -80,9 +81,9 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 
 func TestCanShowJob(t *testing.T) {
 	id := "123XYZ902"
-	job := client.JobViewFull{
-		JobViewPartial: client.JobViewPartial{
-			JobViewCommand: client.JobViewCommand{
+	job := core.JobViewFull{
+		JobViewPartial: core.JobViewPartial{
+			JobViewCommand: core.JobViewCommand{
 				Command: []string{"ls", "-l", "/"},
 			},
 			ID:        id,

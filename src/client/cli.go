@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/ros-k/job-manager/src/core"
 )
 
 const (
@@ -51,7 +53,7 @@ func intToStr(num *int) string {
 	return strconv.Itoa(*num)
 }
 
-func displayJobList(out io.Writer, jobs []*JobViewPartial) {
+func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
 
 	sort.Slice(jobs, func(i, j int) bool {
 		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)

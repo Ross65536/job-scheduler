@@ -1,7 +1,4 @@
-package client
-
-// TODO: Move this file into a common module/open package to re-use it between the client and server
-// This file is the same file as 'server/internal/job_view.go'
+package core
 
 import "time"
 

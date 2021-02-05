@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/ros-k/job-manager/src/core"
 )
 
 type JobStatus string
@@ -122,16 +123,16 @@ func (j *Job) StopJob() error {
 	return nil
 }
 
-func (j *Job) AsView() JobViewFull {
+func (j *Job) AsView() core.JobViewFull {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
 	commandDup := make([]string, len(j.command))
 	copy(commandDup, j.command)
 
-	m := JobViewFull{
-		JobViewPartial: JobViewPartial{
-			JobViewCommand: JobViewCommand{
+	m := core.JobViewFull{
+		JobViewPartial: core.JobViewPartial{
+			JobViewCommand: core.JobViewCommand{
 				Command: commandDup,
 			},
 			ID:        j.id,
