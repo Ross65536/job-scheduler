@@ -118,10 +118,9 @@ func TestCanShowJob(t *testing.T) {
 }
 
 func TestServerError(t *testing.T) {
-	errMsg := "Invalid creds"
 	returnError := internal.ErrorType{
 		Status:  401,
-		Message: errMsg,
+		Message: "Invalid creds",
 	}
 
 	server, uri := setupTestServer(t, 401, returnError, "GET", "/api/jobs", "user", "pass")
@@ -130,6 +129,5 @@ func TestServerError(t *testing.T) {
 	err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "list"})
 	assertNotEquals(t, err, nil)
 
-	assertContains(t, err.Error(), "401")
-	assertContains(t, err.Error(), errMsg)
+	assertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
 }
