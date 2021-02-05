@@ -4,9 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 )
 
 const (
@@ -15,16 +17,17 @@ const (
 )
 
 func parseArgs(args []string) (*APIClient, []string, error) {
+	if len(args) < 2 {
+		return nil, nil, errors.New("Invalid usage, must specify command")
+	}
+
 	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
 
 	url := flags.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
 
-	flags.Parse(args)
+	flags.Parse(args[1:])
 
 	filteredArgs := flags.Args()
-	if len(filteredArgs) < 1 {
-		return nil, nil, errors.New("Invalid usage, must specify command")
-	}
 
 	if filteredArgs[0] == "help" {
 		printHelp()
@@ -54,10 +57,12 @@ func displayJobList(jobs []*JobViewPartial) {
 		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
 	})
 
-	fmt.Println("ID | STATUS | COMMAND | CREATED_AT")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, '.', tabwriter.AlignRight|tabwriter.Debug)
+	fmt.Println("ID \t| STATUS\t | COMMAND\t | CREATED_AT")
 	for _, job := range jobs {
-		fmt.Printf("%s | %s | %s | %s \n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
+		fmt.Printf("%s \t| %s\t | %s\t | %s\t \n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
 	}
+	w.Flush()
 
 	fmt.Printf("--- %d jobs --- \n", len(jobs))
 }
