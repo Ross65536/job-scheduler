@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -77,23 +78,6 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 	return server, uri
 }
 
-func captureOutput(t *testing.T, f func()) string {
-	rescueStdout := os.Stdout
-	r, w, err := os.Pipe()
-	assertNotError(t, err)
-
-	os.Stdout = w
-
-	f()
-
-	w.Close()
-	out, err := ioutil.ReadAll(r)
-	assertNotError(t, err)
-	os.Stdout = rescueStdout
-
-	return string(out)
-}
-
 func TestCanShowJob(t *testing.T) {
 	id := "123XYZ902"
 	job := internal.JobViewFull{
@@ -112,10 +96,12 @@ func TestCanShowJob(t *testing.T) {
 	server, uri := setupTestServer(t, 200, encodeModel(t, job), "GET", "/api/jobs/"+id, "user", "pass")
 	defer server.Close()
 
-	output := captureOutput(t, func() {
-		err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
-		assertNotError(t, err)
-	})
+	buf := bytes.Buffer{}
+	err := internal.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
+	assertNotError(t, err)
+
+	output, err := ioutil.ReadAll(&buf)
+	assertNotError(t, err)
 
 	expected := `ls -l /, RUNNING, 2020-03-02 04:04:04 +0000 UTC -> <nil>, exit_code: -
 
@@ -126,7 +112,7 @@ STDERR:
 STDERR456
 `
 
-	assertEquals(t, output, expected)
+	assertEquals(t, string(output), expected)
 }
 
 func TestServerError(t *testing.T) {
@@ -138,7 +124,7 @@ func TestServerError(t *testing.T) {
 	server, uri := setupTestServer(t, 401, encodeModel(t, returnError), "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
-	err := internal.Start([]string{"client", "-c=http://user:pass@" + uri.Host, "list"})
+	err := internal.Start(os.Stdout, []string{"client", "-c=http://user:pass@" + uri.Host, "list"})
 	assertNotEquals(t, err, nil)
 
 	assertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)

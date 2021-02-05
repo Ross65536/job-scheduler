@@ -9,7 +9,7 @@ import (
 
 func main() {
 	args := os.Args
-	if err := internal.Start(args); err != nil {
+	if err := internal.Start(os.Stdout, args); err != nil {
 		log.Fatalf("Failed to run because: %v", err)
 	}
 }

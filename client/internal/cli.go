@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +16,7 @@ const (
 	defaultURL     = "http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
 )
 
-func parseArgs(args []string) (*APIClient, []string, error) {
+func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	if len(args) < 2 {
 		return nil, nil, errors.New("invalid usage, must specify command")
 	}
@@ -30,7 +30,7 @@ func parseArgs(args []string) (*APIClient, []string, error) {
 	filteredArgs := flags.Args()
 
 	if filteredArgs[0] == "help" {
-		printHelp()
+		printHelp(out, flags)
 		return nil, nil, nil
 	}
 
@@ -51,13 +51,13 @@ func intToStr(num *int) string {
 	return strconv.Itoa(*num)
 }
 
-func displayJobList(jobs []*JobViewPartial) {
+func displayJobList(out io.Writer, jobs []*JobViewPartial) {
 
 	sort.Slice(jobs, func(i, j int) bool {
 		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
 	})
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ID\tSTATUS\tCOMMAND\tCREATED_AT\t")
 	for _, job := range jobs {
 		str := fmt.Sprintf("%s\t%s\t%s\t%s\t", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
@@ -65,10 +65,10 @@ func displayJobList(jobs []*JobViewPartial) {
 	}
 	w.Flush()
 
-	fmt.Printf("--- %d jobs --- \n", len(jobs))
+	fmt.Fprintf(out, "--- %d jobs --- \n", len(jobs))
 }
 
-func listTask(api *APIClient, commandRest []string) error {
+func listTask(out io.Writer, api *APIClient, commandRest []string) error {
 	if len(commandRest) != 0 {
 		return errors.New("too many args")
 	}
@@ -78,11 +78,11 @@ func listTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	displayJobList(jobs)
+	displayJobList(out, jobs)
 	return nil
 }
 
-func showTask(api *APIClient, commandRest []string) error {
+func showTask(out io.Writer, api *APIClient, commandRest []string) error {
 	if len(commandRest) != 1 {
 		return errors.New("must specify ID")
 	}
@@ -94,13 +94,13 @@ func showTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	fmt.Printf("%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n",
+	fmt.Fprintf(out, "%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n",
 		strings.Join(job.Command, " "), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
 
 	return nil
 }
 
-func stopTask(api *APIClient, commandRest []string) error {
+func stopTask(out io.Writer, api *APIClient, commandRest []string) error {
 	if len(commandRest) != 1 {
 		return errors.New("must specify ID")
 	}
@@ -112,11 +112,11 @@ func stopTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	fmt.Println("Stopping")
+	fmt.Fprintln(out, "OK")
 	return nil
 }
 
-func startTask(api *APIClient, commandRest []string) error {
+func startTask(out io.Writer, api *APIClient, commandRest []string) error {
 	if len(commandRest) < 1 {
 		return errors.New("must specify job to start")
 	}
@@ -126,17 +126,19 @@ func startTask(api *APIClient, commandRest []string) error {
 		return err
 	}
 
-	fmt.Printf("ID: %s\n", job.ID)
+	fmt.Fprintf(out, "ID: %s\n", job.ID)
 	return nil
 }
 
-func printHelp() {
-	fmt.Println(`Format: client [flags] <command> [id/job]
+func printHelp(out io.Writer, flags *flag.FlagSet) {
+	fmt.Fprintf(out, `Format: client [flags] <command> [id/job]
 	
 	command: list | show | stop | start | help
 	`)
-	flag.PrintDefaults()
-	fmt.Println(`
+
+	flags.SetOutput(out)
+	flags.PrintDefaults()
+	fmt.Fprintf(out, `
 	Examples:
 	- client help
 	- client -c=http://user:pass@localhost:80 list
@@ -146,8 +148,8 @@ func printHelp() {
 	`)
 }
 
-func Start(args []string) error {
-	api, filteredArgs, err := parseArgs(args)
+func Start(out io.Writer, args []string) error {
+	api, filteredArgs, err := parseArgs(out, args)
 
 	if api == nil && filteredArgs == nil && err == nil {
 		return nil
@@ -159,13 +161,13 @@ func Start(args []string) error {
 	argsRest := filteredArgs[1:]
 	switch task := filteredArgs[0]; task {
 	case "list":
-		return listTask(api, argsRest)
+		return listTask(out, api, argsRest)
 	case "start":
-		return startTask(api, argsRest)
+		return startTask(out, api, argsRest)
 	case "show":
-		return showTask(api, argsRest)
+		return showTask(out, api, argsRest)
 	case "stop":
-		return stopTask(api, argsRest)
+		return stopTask(out, api, argsRest)
 	default:
 		return errors.New("unknown command " + task)
 	}
