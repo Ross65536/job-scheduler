@@ -2,42 +2,40 @@ package internal
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
 const (
 	connectionFlag = "-c="
+	defaultURL     = "http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
 )
 
-func parseFlags(args []string) (*APIClient, []string, error) {
-	filteredArgs := []string{}
-	url := ""
+func parseArgs() (*APIClient, []string, error) {
+	url := flag.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
 
-	for _, arg := range args {
-		if strings.HasPrefix(arg, connectionFlag) {
-			url = strings.TrimPrefix(arg, connectionFlag)
-		} else {
-			filteredArgs = append(filteredArgs, arg)
-		}
+	flag.Parse()
+
+	filteredArgs := flag.Args()
+	if len(filteredArgs) < 1 {
+		return nil, nil, errors.New("Invalid usage, must specify command")
 	}
 
-	if url == "" {
-		return nil, nil, fmt.Errorf("Must specify connection flag '%s'", connectionFlag)
+	if filteredArgs[0] == "help" {
+		printHelp()
+		return nil, nil, nil
 	}
 
-	httpClient, err := NewHTTPClient(url)
+	httpClient, err := NewHTTPClient(*url)
 	if err != nil {
 		return nil, nil, err
 	}
 	api := APIClient{httpClient}
 
-	return &api, filteredArgs, nil
-}
-
-func joinString(command []string) string {
-	return strings.Join(command, " ")
+	return &api, flag.Args(), nil
 }
 
 func intToStr(num *int) string {
@@ -45,7 +43,7 @@ func intToStr(num *int) string {
 		return "-"
 	}
 
-	return fmt.Sprintf("%d", *num)
+	return strconv.Itoa(*num)
 }
 
 func displayJobList(jobs []*JobViewPartial) {
@@ -56,7 +54,7 @@ func displayJobList(jobs []*JobViewPartial) {
 
 	fmt.Println("ID | STATUS | COMMAND | CREATED_AT")
 	for _, job := range jobs {
-		fmt.Printf("%s | %s | %s | %s \n", job.ID, job.Status, joinString(job.Command), job.CreatedAt)
+		fmt.Printf("%s | %s | %s | %s \n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
 	}
 
 	fmt.Printf("--- %d jobs --- \n", len(jobs))
@@ -89,7 +87,7 @@ func showTask(api *APIClient, commandRest []string) error {
 	}
 
 	fmt.Printf("%s, %s, %s -> %s, exit_code: %s\n\nSTDOUT:\n%s\n\nSTDERR:\n%s\n",
-		joinString(job.Command), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
+		strings.Join(job.Command, " "), job.Status, job.CreatedAt, job.StoppedAt, intToStr(job.ExitCode), job.Stdout, job.Stderr)
 
 	return nil
 }
@@ -111,13 +109,11 @@ func stopTask(api *APIClient, commandRest []string) error {
 }
 
 func startTask(api *APIClient, commandRest []string) error {
-	if len(commandRest) != 1 {
+	if len(commandRest) < 1 {
 		return errors.New("Must specify job to start")
 	}
 
-	jobArgs := strings.Fields(commandRest[0])
-
-	job, err := api.StartJob(jobArgs)
+	job, err := api.StartJob(commandRest)
 	if err != nil {
 		return err
 	}
@@ -127,10 +123,12 @@ func startTask(api *APIClient, commandRest []string) error {
 }
 
 func printHelp() {
-	fmt.Println(`Format: client <command> [-c=<connection>] [id/command]
+	fmt.Println(`Format: client [flags] <command> [id/job]
 	
 	command: list | show | stop | start | help
-
+	`)
+	flag.PrintDefaults()
+	fmt.Println(`
 	Examples:
 	- client help
 	- client -c=http://user:pass@localhost:80 list
@@ -140,28 +138,18 @@ func printHelp() {
 	`)
 }
 
-func Start(args []string) error {
-	if len(args) < 2 {
-		return errors.New("Invalid usage, must specify command")
-	}
+func Start() error {
+	api, filteredArgs, err := parseArgs()
 
-	task := args[1]
-	if task == "help" {
-		printHelp()
+	if api == nil && filteredArgs == nil && err == nil {
 		return nil
 	}
-
-	api, filteredArgs, err := parseFlags(args)
 	if err != nil {
 		return err
 	}
 
-	if len(filteredArgs) < 2 {
-		return errors.New("Must specify command")
-	}
-
-	argsRest := filteredArgs[2:]
-	switch task {
+	argsRest := filteredArgs[1:]
+	switch task := filteredArgs[0]; task {
 	case "list":
 		return listTask(api, argsRest)
 	case "start":
