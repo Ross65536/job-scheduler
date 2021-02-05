@@ -1,4 +1,4 @@
-package internal_test
+package backend_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ros-k/job-manager/server/internal"
+	"github.com/ros-k/job-manager/src/backend"
 )
 
 type httpBasic struct {
@@ -80,17 +80,17 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
-func setupTest(t *testing.T, basic httpBasic) (*internal.State, *httptest.Server) {
-	state := internal.NewState()
+func setupTest(t *testing.T, basic httpBasic) (*backend.State, *httptest.Server) {
+	state := backend.NewState()
 	state.AddUser(basic.username, basic.password)
-	server, err := internal.NewServer(state)
+	server, err := backend.NewServer(state)
 	assertNotError(t, err)
 
 	router := server.GetRouter()
 	return state, httptest.NewServer(router)
 }
 
-func teardownTest(state *internal.State, server *httptest.Server) {
+func teardownTest(state *backend.State, server *httptest.Server) {
 	state.ClearUsers()
 	server.Close()
 }
@@ -115,7 +115,7 @@ func TestCanCreateJob(t *testing.T) {
 		jsonResponse = parseJsonObj(t, resp)
 		status := jsonResponse["status"].(string)
 
-		if status != string(internal.JobFinished) {
+		if status != string(backend.JobFinished) {
 			return false
 		}
 

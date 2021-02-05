@@ -1,4 +1,4 @@
-package internal_test
+package client_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ros-k/job-manager/client/internal"
+	"github.com/ros-k/job-manager/src/client"
 )
 
 const (
@@ -80,9 +80,9 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 
 func TestCanShowJob(t *testing.T) {
 	id := "123XYZ902"
-	job := internal.JobViewFull{
-		JobViewPartial: internal.JobViewPartial{
-			JobViewCommand: internal.JobViewCommand{
+	job := client.JobViewFull{
+		JobViewPartial: client.JobViewPartial{
+			JobViewCommand: client.JobViewCommand{
 				Command: []string{"ls", "-l", "/"},
 			},
 			ID:        id,
@@ -97,7 +97,7 @@ func TestCanShowJob(t *testing.T) {
 	defer server.Close()
 
 	buf := bytes.Buffer{}
-	err := internal.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
+	err := client.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
 	assertNotError(t, err)
 
 	output, err := ioutil.ReadAll(&buf)
@@ -116,7 +116,7 @@ STDERR456
 }
 
 func TestServerError(t *testing.T) {
-	returnError := internal.ErrorType{
+	returnError := client.ErrorType{
 		Status:  401,
 		Message: "Invalid creds",
 	}
@@ -124,7 +124,7 @@ func TestServerError(t *testing.T) {
 	server, uri := setupTestServer(t, 401, encodeModel(t, returnError), "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
-	err := internal.Start(os.Stdout, []string{"client", "-c=http://user:pass@" + uri.Host, "list"})
+	err := client.Start(os.Stdout, []string{"client", "-c=http://user:pass@" + uri.Host, "list"})
 	assertNotEquals(t, err, nil)
 
 	assertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
