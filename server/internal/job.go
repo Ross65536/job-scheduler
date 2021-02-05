@@ -144,7 +144,8 @@ func (j *Job) AsView() JobViewFull {
 	}
 
 	if !j.stoppedAt.IsZero() {
-		m.StoppedAt = &j.stoppedAt
+		copy := j.stoppedAt
+		m.StoppedAt = &copy
 	}
 
 	return m
