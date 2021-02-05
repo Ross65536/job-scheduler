@@ -103,7 +103,7 @@ func TestCanShowJob(t *testing.T) {
 			},
 			ID:        id,
 			Status:    "RUNNING",
-			CreatedAt: time.Now(),
+			CreatedAt: time.Date(2020, time.March, 2, 4, 4, 4, 0, time.UTC),
 		},
 		Stdout: "STDOUT123",
 		Stderr: "STDERR456",
@@ -117,9 +117,16 @@ func TestCanShowJob(t *testing.T) {
 		assertNotError(t, err)
 	})
 
-	assertContains(t, output, "RUNNING")
-	assertContains(t, output, "STDOUT123")
-	assertContains(t, output, "STDERR456")
+	expected := `ls -l /, RUNNING, 2020-03-02 04:04:04 +0000 UTC -> <nil>, exit_code: -
+
+STDOUT:
+STDOUT123
+
+STDERR:
+STDERR456
+`
+
+	assertEquals(t, output, expected)
 }
 
 func TestServerError(t *testing.T) {
