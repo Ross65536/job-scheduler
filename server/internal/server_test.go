@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -55,9 +54,7 @@ func makeRequestWithHttpBasic(t *testing.T, basic httpBasic, method, url, body s
 	resp, err := client.Do(req)
 	assertNotError(t, err)
 
-	if resp.StatusCode != expectedStatus {
-		t.Fatalf("Received non-%d response: %d\n", expectedStatus, resp.StatusCode)
-	}
+	assertEquals(t, resp.StatusCode, expectedStatus)
 
 	return resp
 }
@@ -84,13 +81,11 @@ func limitedWait(t *testing.T, body func() bool) {
 	t.Fatal("Timeout waiting for response")
 }
 
-func setupTest(basic httpBasic) (*internal.State, *httptest.Server) {
+func setupTest(t *testing.T, basic httpBasic) (*internal.State, *httptest.Server) {
 	state := internal.NewState()
 	state.AddUser(basic.username, basic.password)
 	server, err := internal.NewServer(state)
-	if err != nil {
-		log.Fatalf("Failed to setup test %s", err)
-	}
+	assertNotError(t, err)
 
 	router := server.GetRouter()
 	return state, httptest.NewServer(router)
@@ -104,7 +99,7 @@ func teardownTest(state *internal.State, server *httptest.Server) {
 func TestCanCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
 	command := `{"command": ["ls", "/"]}`
@@ -134,7 +129,7 @@ func TestCanCreateJob(t *testing.T) {
 func TestFailToCreateJob(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
 	command := `{"command": ["ls_invalid_program_1223323"]}` // assumed to be an invalid program
@@ -146,7 +141,7 @@ func TestFailToCreateJob(t *testing.T) {
 func TestInvalidAuth(t *testing.T) {
 	basic := buildDefaultUser()
 
-	state, server := setupTest(basic)
+	state, server := setupTest(t, basic)
 	defer teardownTest(state, server)
 
 	invalidAuth := httpBasic{
