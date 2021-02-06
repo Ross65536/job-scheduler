@@ -13,15 +13,13 @@ const (
 )
 
 type HTTPClient struct {
-	username string
-	token    string
-	apiUrl   url.URL
+	username   string
+	token      string
+	apiUrl     url.URL
+	httpClient http.Client
 }
 
-// it's thread-safe, recommended to reuse the client
-var httpClient = http.Client{}
-
-func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
+func parseUrl(apiUrl, expectedScheme string) (*url.URL, error) {
 	uri, err := url.ParseRequestURI(apiUrl)
 	if err != nil {
 		return nil, err
@@ -32,7 +30,7 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 	}
 
 	// use https when supported
-	if uri.Scheme != "http" {
+	if uri.Scheme != expectedScheme {
 		return nil, errors.New("invalid url scheme")
 	}
 
@@ -40,15 +38,27 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 		return nil, errors.New("base URI must have an HTTP basic username and password encoded")
 	}
 
-	password, ok := uri.User.Password()
+	_, ok := uri.User.Password()
 	if !ok {
 		return nil, errors.New("base URI must have an HTTP basic password encoded")
 	}
 
+	return uri, nil
+}
+
+func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
+	uri, err := parseUrl(apiUrl, "http")
+	if err != nil {
+		return nil, err
+	}
+
+	// ok checked before hand
+	password, _ := uri.User.Password()
 	return &HTTPClient{
-		username: uri.User.Username(),
-		token:    password,
-		apiUrl:   *uri,
+		username:   uri.User.Username(),
+		token:      password,
+		apiUrl:     *uri,
+		httpClient: http.Client{},
 	}, nil
 }
 
@@ -70,7 +80,7 @@ func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, p
 		return -1, nil, err
 	}
 
-	response, err := httpClient.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return -1, nil, err
 	}
