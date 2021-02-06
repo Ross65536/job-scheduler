@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultPrivateKeyPath  = "certs/out/localhost.key"
-	defaultCertificatePath = "certs/out/localhost.crt"
+	defaultPrivateKeyPath  = "certs/server.key"
+	defaultCertificatePath = "certs/server.crt"
 )
 
 func parsePort() (int, string, string, error) {

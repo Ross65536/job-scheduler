@@ -15,7 +15,7 @@ import (
 const (
 	connectionFlag = "-c="
 	defaultURL     = "https://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
-	defaultCAPath  = "certs/out/ExampleCA.crt"
+	defaultCAPath  = "certs/rootCA.crt"
 )
 
 func buildHTTPClient(url, certPath *string) (*HTTPClient, error) {
