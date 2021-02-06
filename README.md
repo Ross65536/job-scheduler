@@ -147,7 +147,7 @@ head -c 32 /dev/urandom | base64
 Assuming you are in the `certs` folder.
 
 > In answer to the question `Common Name (eg, fully qualified host name)` below you should set `localhost` (or your real domain)
-> Using `secp521r1` algorithm
+> Using `secp521r1` elliptic curve. `secp384r1` and `prime256v1` could also be used if `secp521r1` not supported.
 
 - Generate private CA
 
@@ -166,5 +166,5 @@ openssl req -new -key server.key -out server.csr
 
 # sign server key with CA
 openssl x509 -req -in server.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -days 365 -out server.crt -extensions SAN -extfile <(cat /etc/ssl/openssl.cnf \
-    <(printf "\n[SAN]\nsubjectAltName=DNS:localhost"))
+    <(printf "\n[SAN]\nsubjectAltName=DNS:localhost")) # here must put server domain
 ```
