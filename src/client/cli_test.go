@@ -71,7 +71,7 @@ func TestCanShowJob(t *testing.T) {
 	defer server.Close()
 
 	buf := bytes.Buffer{}
-	err := client.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
+	err := client.Start(&buf, []string{"client", "-ca=", "-c=http://user:pass@" + uri.Host, "show", id})
 	core.AssertNotError(t, err)
 
 	output, err := ioutil.ReadAll(&buf)
@@ -98,7 +98,7 @@ func TestServerError(t *testing.T) {
 	server, uri := setupTestServer(t, 401, encodeModel(t, returnError), "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
-	err := client.Start(os.Stdout, []string{"client", "-c=http://user:pass@" + uri.Host, "list"})
+	err := client.Start(os.Stdout, []string{"client", "-ca=", "-c=http://user:pass@" + uri.Host, "list"})
 	core.AssertNotEquals(t, err, nil)
 
 	core.AssertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
