@@ -28,6 +28,14 @@ func parsePort() (int, string, string, error) {
 	return *port, *certificate, *privateKey, nil
 }
 
+func start(server *backend.Server, port int, certificatePath, privateKeyPath string) error {
+	if certificatePath == "" && privateKeyPath == "" {
+		return server.Start(port)
+	}
+
+	return server.StartWithTls(port, certificatePath, privateKeyPath)
+}
+
 func main() {
 	state := backend.NewState()
 	// TODO: place this into a config file or equivalent
@@ -46,7 +54,7 @@ func main() {
 
 	log.Printf("Starting server on :%d", port)
 
-	if err := server.StartWithTls(port, certificatePath, privateKeyPath); err != nil {
+	if err := start(server, port, certificatePath, privateKeyPath); err != nil {
 		log.Printf("An error occurred, the server stopped %s", err)
 		os.Exit(1)
 	}

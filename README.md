@@ -11,7 +11,7 @@ Consists of a:
 
 There are useful scripts in the `scripts` directory for testing the behavior of the system.
 
-Quick start (on localhost):
+Quick start:
 ```shell
 # must be in the root folder for the defaults
 $ pwd 
@@ -129,6 +129,8 @@ These flags have defaults for running on localhost from the root folder.
 - `p`: the port to listen on
 - `cert`: path to the server's public certificate for HTTPS
 - `privateKey`: path to the server's private key for HTTPS
+
+Set `cert` and `privateKey` to empty string to start server in regular HTTP mode.
 
 Example full command:
 ```shell
