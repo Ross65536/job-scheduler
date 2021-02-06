@@ -9,6 +9,11 @@ import (
 	"github.com/ros-k/job-manager/src/backend"
 )
 
+const (
+	privateKeyPath  = "certs/out/localhost.key"
+	certificatePath = "certs/out/localhost.crt"
+)
+
 func parsePort() (int, error) {
 	port := flag.Int("p", 10000, "port to listen on")
 
@@ -39,7 +44,7 @@ func main() {
 
 	log.Printf("Starting server on :%d", port)
 
-	if err := server.Start(port); err != nil {
+	if err := server.StartWithTls(port, certificatePath, privateKeyPath); err != nil {
 		log.Printf("An error occurred, the server stopped %s", err)
 		os.Exit(1)
 	}

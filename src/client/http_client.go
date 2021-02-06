@@ -2,7 +2,10 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -16,10 +19,34 @@ type HTTPClient struct {
 	username   string
 	token      string
 	apiUrl     url.URL
-	httpClient http.Client
+	httpClient *http.Client
 }
 
-func parseUrl(apiUrl, expectedScheme string) (*url.URL, error) {
+func buildClientWithCA(caPath string) (*http.Client, error) {
+	caCert, err := ioutil.ReadFile(caPath)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool, err := x509.SystemCertPool()
+	if err != nil {
+		caCertPool = x509.NewCertPool()
+	}
+
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: caCertPool,
+			},
+		},
+	}
+
+	return client, nil
+}
+
+func newHTTPClientCore(apiUrl string, client *http.Client) (*HTTPClient, error) {
 	uri, err := url.ParseRequestURI(apiUrl)
 	if err != nil {
 		return nil, err
@@ -30,7 +57,7 @@ func parseUrl(apiUrl, expectedScheme string) (*url.URL, error) {
 	}
 
 	// use https when supported
-	if uri.Scheme != expectedScheme {
+	if uri.Scheme != "http" && uri.Scheme != "https" {
 		return nil, errors.New("invalid url scheme")
 	}
 
@@ -38,28 +65,30 @@ func parseUrl(apiUrl, expectedScheme string) (*url.URL, error) {
 		return nil, errors.New("base URI must have an HTTP basic username and password encoded")
 	}
 
-	_, ok := uri.User.Password()
+	password, ok := uri.User.Password()
 	if !ok {
 		return nil, errors.New("base URI must have an HTTP basic password encoded")
 	}
 
-	return uri, nil
-}
-
-func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
-	uri, err := parseUrl(apiUrl, "http")
-	if err != nil {
-		return nil, err
-	}
-
-	// ok checked before hand
-	password, _ := uri.User.Password()
 	return &HTTPClient{
 		username:   uri.User.Username(),
 		token:      password,
 		apiUrl:     *uri,
-		httpClient: http.Client{},
+		httpClient: client,
 	}, nil
+}
+
+func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
+	return newHTTPClientCore(apiUrl, &http.Client{})
+}
+
+func NewHTTPClientWithCA(apiUrl, caPath string) (*HTTPClient, error) {
+	client, err := buildClientWithCA(caPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return newHTTPClientCore(apiUrl, client)
 }
 
 func (c *HTTPClient) Get(pathSegments ...string) (statusCode int, returnBody []byte, err error) {

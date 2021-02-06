@@ -14,8 +14,17 @@ import (
 
 const (
 	connectionFlag = "-c="
-	defaultURL     = "http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
+	defaultURL     = "https://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo=@localhost:10000"
+	defaultCAPath  = "certs/out/ExampleCA.crt"
 )
+
+func buildHTTPClient(url, certPath *string) (*HTTPClient, error) {
+	if *certPath == "" {
+		return NewHTTPClient(*url)
+	}
+
+	return NewHTTPClientWithCA(*url, *certPath)
+}
 
 func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	if len(args) < 2 {
@@ -25,6 +34,7 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
 
 	url := flags.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
+	certPath := flags.String("ca", defaultCAPath, "path to the CA public key used by server, set to empty string not to add")
 
 	flags.Parse(args[1:])
 
@@ -35,7 +45,7 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 		return nil, nil, nil
 	}
 
-	httpClient, err := NewHTTPClient(*url)
+	httpClient, err := buildHTTPClient(url, certPath)
 	if err != nil {
 		return nil, nil, err
 	}

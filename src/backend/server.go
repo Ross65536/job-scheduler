@@ -46,6 +46,10 @@ func (s *Server) Start(port int) error {
 	return http.ListenAndServe(":"+strconv.Itoa(port), s.router)
 }
 
+func (s *Server) StartWithTls(port int, publicCert, privateKey string) error {
+	return http.ListenAndServeTLS(":"+strconv.Itoa(port), publicCert, privateKey, s.router)
+}
+
 func (s *Server) checkAuth(r *http.Request) (*User, error) {
 	username, password, ok := r.BasicAuth()
 	if !ok {
