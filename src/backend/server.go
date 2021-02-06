@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -41,8 +42,8 @@ func NewServer(state *State) (*Server, error) {
 	return s, nil
 }
 
-func (s *Server) Start() error {
-	return http.ListenAndServe(":10000", s.router)
+func (s *Server) Start(port int) error {
+	return http.ListenAndServe(":"+strconv.Itoa(port), s.router)
 }
 
 func (s *Server) checkAuth(r *http.Request) (*User, error) {
