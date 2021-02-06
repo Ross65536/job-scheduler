@@ -244,7 +244,6 @@ Flags:
 These will probably be hardcoded on the client instead.
 
 - The `-c` flag specifies the server location and the HTTP Basic authn for the user. This could be cached between command executions to simplify the interface. Example: `-c=http://user1:pass1@127.0.0.1:8080`
-- The `-cert` flag specifies the filepath of the server's public key. 
 
 ## Auth
 
