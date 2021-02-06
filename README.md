@@ -13,6 +13,8 @@ There are useful scripts in the `scripts` directory for testing the behavior of 
 
 Quick start:
 ```shell
+# clone the repository into your $GOPATH
+
 # must be in the root folder for the defaults
 $ pwd 
 ~/go/src/github.com/ros-k/job-manager
