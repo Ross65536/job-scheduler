@@ -10,20 +10,22 @@ import (
 )
 
 const (
-	privateKeyPath  = "certs/out/localhost.key"
-	certificatePath = "certs/out/localhost.crt"
+	defaultPrivateKeyPath  = "certs/out/localhost.key"
+	defaultCertificatePath = "certs/out/localhost.crt"
 )
 
-func parsePort() (int, error) {
+func parsePort() (int, string, string, error) {
 	port := flag.Int("p", 10000, "port to listen on")
+	certificate := flag.String("cert", defaultCertificatePath, "path to the server's public certificate")
+	privateKey := flag.String("privateKey", defaultPrivateKeyPath, "path to the server's private key, matching the certificate")
 
 	flag.Parse()
 
 	if *port < 0 || *port > 65535 {
-		return 0, errors.New("invalid port value")
+		return 0, "", "", errors.New("invalid port value")
 	}
 
-	return *port, nil
+	return *port, *certificate, *privateKey, nil
 }
 
 func main() {
@@ -37,7 +39,7 @@ func main() {
 		log.Fatalf("Failed to create server %s", err)
 	}
 
-	port, err := parsePort()
+	port, certificatePath, privateKeyPath, err := parsePort()
 	if err != nil {
 		log.Fatalf("Failed to parse port: %s", err)
 	}
