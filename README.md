@@ -17,6 +17,9 @@ Quick start (on localhost):
 $ pwd 
 ~/go/src/github.com/ros-k/job-manager
 
+# setup
+$ go get ./...
+
 # start server on :10000
 $ go run src/cmd/server/main.go 
 
