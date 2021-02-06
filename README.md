@@ -11,6 +11,19 @@ Consists of a:
 
 There are useful scripts in the `scripts` directory for testing the behavior of the system.
 
+Quick start (on localhost):
+```shell
+# must be in the root folder for the defaults
+$ pwd 
+~/go/src/github.com/ros-k/job-manager
+
+# start server on :10000
+$ go run src/cmd/server/main.go 
+
+# on another terminal, send client command
+$ go run src/cmd/client/main.go start ls -l /
+```
+
 ## Instructions
 
 You need to clone the repository into your `GOPATH` env var folder (which needs to be set).
@@ -49,13 +62,6 @@ go run src/cmd/server/main.go
 
 The backend must be running in order to use the client.
 
-The connection flag must be specified for commands other than `help`, example list command:
-```shell
-$ go run src/cmd/client/main.go -c=http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo\=@localhost:10000 list
-```
-
-The connection flag used in examples will be defined as for example `CON=-c=http://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo\=@localhost:10000` (this user is present in the backend)
-
 > `client` can be the compiled binary or `go run src/cmd/client/main.go`
 
 Examples:
@@ -68,7 +74,7 @@ Examples:
 
 - List All Jobs
   ```shell
-  $ client $CON list 
+  $ client list 
   ID | STATUS | COMMAND | CREATED_AT
   f104e7f5-4601-4e0e-a474-e17e1c375255 | FINISHED | /scripts/long_process.sh 30 | 2021-02-03 20:16:12.52405 +0100 CET
   ...
@@ -76,13 +82,13 @@ Examples:
 
 - Start Job
   ```shell
-  $ client $CON start "ls -l /" 
+  $ client start "ls -l /" 
   ID: dc53a7f4-2dc4-42db-863a-de3d788ddff1
   ```
 
 - Show Job Details
   ```shell
-  $ client $CON show dc53a7f4-2dc4-42db-863a-de3d788ddff1
+  $ client show dc53a7f4-2dc4-42db-863a-de3d788ddff1
   ls -l /, FINISHED, 2021-02-03 21:41:02.406174 +0100 CET -> 2021-02-03 21:41:02.413084 +0100 CET, exit_code: 0
 
   STDOUT:
@@ -95,18 +101,70 @@ Examples:
 
 - Stop Job
   ```shell
-  $ client $CON stop dc53a7f4-2dc4-42db-863a-de3d788ddff1
+  $ client stop dc53a7f4-2dc4-42db-863a-de3d788ddff1
   Stopping
   ```
 
+### Flags
+
+These flags have defaults for running on localhost from the root folder.
+
+- `c`: The URL connection flag can be specified. A default is set for localhost
+- `ca`: Private CA path to the public key. Will be added by the client as a trusted CA, which can be used to sign server certificates.
+
+Example full command:
+```shell
+$ go run src/cmd/client/main.go -ca=certs/rootCA.crt -c=https://user2:oAtCvE6Xcu07f2PmjoOjq8kv6X2XTgh3s37suKzKHLo\=@localhost:10000 list
+```
+
 ## Server
+
+### Flags
+
+These flags have defaults for running on localhost from the root folder.
+
+- `p`: the port to listen on
+- `cert`: path to the server's public certificate for HTTPS
+- `privateKey`: path to the server's private key for HTTPS
+
+Example full command:
+```shell
+$ go run src/cmd/server/main.go -cert=certs/server.crt -privateKey=certs/server.key
+```
 
 ### MISC
 
-- Generating new token for a user
+#### Generating new token for a user
 
 Tokens are 32 byte long.
 
 ```shell
 head -c 32 /dev/urandom | base64
+```
+
+#### Generating certificates
+
+Assuming you are in the `certs` folder.
+
+> In answer to the question `Common Name (eg, fully qualified host name)` below you should set `localhost` (or your real domain)
+> Using `secp521r1` algorithm
+
+- Generate private CA
+
+```shell
+openssl ecparam -genkey -name secp521r1 -out rootCA.key
+# the CA public key, send to client to have it trust it
+openssl req -x509 -new -key rootCA.key -days 3650 -out rootCA.crt
+```
+
+- Generate server certificate
+
+```shell
+# generate server keys, these must be passed to the server application
+openssl ecparam -genkey -name secp521r1 -out server.key
+openssl req -new -key server.key -out server.csr
+
+# sign server key with CA
+openssl x509 -req -in server.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -days 365 -out server.crt -extensions SAN -extfile <(cat /etc/ssl/openssl.cnf \
+    <(printf "\n[SAN]\nsubjectAltName=DNS:localhost"))
 ```
