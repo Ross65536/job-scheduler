@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"github.com/ros-k/job-manager/src/client"
-	"github.com/ros-k/job-manager/src/core"
+	"github.com/ros-k/job-manager/src/core/testutil"
+	"github.com/ros-k/job-manager/src/core/view"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 
 func encodeModel(t *testing.T, model interface{}) []byte {
 	returnJson, err := json.Marshal(model)
-	core.AssertNotError(t, err)
+	testutil.AssertNotError(t, err)
 
 	return returnJson
 }
@@ -37,13 +38,13 @@ func TestMain(m *testing.M) {
 func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		core.AssertEquals(t, expectedUriPath, r.URL.Path)
-		core.AssertEquals(t, expectedMethod, r.Method)
+		testutil.AssertEquals(t, expectedUriPath, r.URL.Path)
+		testutil.AssertEquals(t, expectedMethod, r.Method)
 
 		user, pass, ok := r.BasicAuth()
-		core.AssertEquals(t, ok, true)
-		core.AssertEquals(t, user, expectedbasicUsername)
-		core.AssertEquals(t, pass, expectedBasicPassword)
+		testutil.AssertEquals(t, ok, true)
+		testutil.AssertEquals(t, user, expectedbasicUsername)
+		testutil.AssertEquals(t, pass, expectedBasicPassword)
 
 		if returnJson == nil {
 			return
@@ -57,16 +58,16 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 	server := httptest.NewTLSServer(handler)
 
 	uri, err := url.ParseRequestURI(server.URL)
-	core.AssertNotError(t, err)
+	testutil.AssertNotError(t, err)
 
 	return server, uri
 }
 
 func TestCanShowJob(t *testing.T) {
 	id := "123XYZ902"
-	job := core.JobViewFull{
-		JobViewPartial: core.JobViewPartial{
-			JobViewCommand: core.JobViewCommand{
+	job := view.JobViewFull{
+		JobViewPartial: view.JobViewPartial{
+			JobViewCommand: view.JobViewCommand{
 				Command: []string{"ls", "-l", "/"},
 			},
 			ID:        id,
@@ -82,7 +83,7 @@ func TestCanShowJob(t *testing.T) {
 
 	buf := bytes.Buffer{}
 	err := client.Start(&buf, []string{"client", "-ca=", "-c=https://user:pass@" + uri.Host, "show", id})
-	core.AssertNotError(t, err)
+	testutil.AssertNotError(t, err)
 
 	output := buf.String()
 
@@ -95,7 +96,7 @@ STDERR:
 STDERR456
 `
 
-	core.AssertEquals(t, string(output), expected)
+	testutil.AssertEquals(t, string(output), expected)
 }
 
 func TestServerError(t *testing.T) {
@@ -108,7 +109,7 @@ func TestServerError(t *testing.T) {
 	defer server.Close()
 
 	err := client.Start(os.Stdout, []string{"client", "-ca=", "-c=https://user:pass@" + uri.Host, "list"})
-	core.AssertNotEquals(t, err, nil)
+	testutil.AssertNotEquals(t, err, nil)
 
-	core.AssertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
+	testutil.AssertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
 }

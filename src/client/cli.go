@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/ros-k/job-manager/src/core"
+	"github.com/ros-k/job-manager/src/core/view"
 )
 
 const (
@@ -56,7 +56,7 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	return &api, flags.Args(), nil
 }
 
-func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
+func displayJobList(out io.Writer, jobs []*view.JobViewPartial) {
 
 	sort.Slice(jobs, func(i, j int) bool {
 		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
@@ -146,7 +146,7 @@ func printHelp(out io.Writer, flags *flag.FlagSet) {
 	- client -c=https://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
 	- client -c=https://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
 	- client -c=https://user:pass@localhost:10000 start ls -l /
-	`)
+`)
 }
 
 func Start(out io.Writer, args []string) error {
