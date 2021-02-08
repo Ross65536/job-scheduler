@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ros-k/job-manager/src/core"
+	"github.com/ros-k/job-manager/src/core/view"
 )
 
 type APIClient struct {
@@ -30,7 +30,7 @@ func buildResponseError(code int, body []byte) error {
 	return fmt.Errorf("an error occurred (HTTP %d): %s", code, string(body))
 }
 
-func (api *APIClient) ListJobs() ([]*core.JobViewPartial, error) {
+func (api *APIClient) ListJobs() ([]*view.JobViewPartial, error) {
 	status, resp, err := api.HTTPClient.Get("api", "jobs")
 	if err != nil {
 		return nil, err
@@ -40,13 +40,13 @@ func (api *APIClient) ListJobs() ([]*core.JobViewPartial, error) {
 		return nil, buildResponseError(status, resp)
 	}
 
-	jobs := []*core.JobViewPartial{}
+	jobs := []*view.JobViewPartial{}
 	err = json.Unmarshal(resp, &jobs)
 
 	return jobs, err
 }
 
-func (api *APIClient) ShowJob(id string) (*core.JobViewFull, error) {
+func (api *APIClient) ShowJob(id string) (*view.JobViewFull, error) {
 	status, resp, err := api.HTTPClient.Get("api", "jobs", url.PathEscape(id))
 	if err != nil {
 		return nil, err
@@ -56,14 +56,14 @@ func (api *APIClient) ShowJob(id string) (*core.JobViewFull, error) {
 		return nil, buildResponseError(status, resp)
 	}
 
-	job := core.JobViewFull{}
+	job := view.JobViewFull{}
 	err = json.Unmarshal(resp, &job)
 
 	return &job, err
 }
 
-func (api *APIClient) StartJob(command []string) (*core.JobViewPartial, error) {
-	job := core.JobViewCommand{Command: command}
+func (api *APIClient) StartJob(command []string) (*view.JobViewPartial, error) {
+	job := view.JobViewCommand{Command: command}
 	requestJson, err := json.Marshal(job)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (api *APIClient) StartJob(command []string) (*core.JobViewPartial, error) {
 		return nil, buildResponseError(status, resp)
 	}
 
-	respJob := core.JobViewPartial{}
+	respJob := view.JobViewPartial{}
 	err = json.Unmarshal(resp, &respJob)
 
 	return &respJob, err

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/ros-k/job-manager/src/core"
+	"github.com/ros-k/job-manager/src/core/view"
 )
 
 type Server struct {
@@ -103,7 +103,7 @@ func (s *Server) stopJob(w http.ResponseWriter, r *http.Request, job *Job) {
 
 func (s *Server) getJobs(w http.ResponseWriter, r *http.Request, user *User) {
 	jobs := user.GetAllJobs()
-	jobViews := make([]core.JobViewPartial, 0, len(jobs))
+	jobViews := make([]view.JobViewPartial, 0, len(jobs))
 
 	for _, v := range jobs {
 		jobViews = append(jobViews, v.AsView().JobViewPartial)
@@ -132,7 +132,7 @@ func parseJobCreation(r io.Reader) ([]string, error) {
 		return nil, err
 	}
 
-	createJob := core.JobViewCommand{}
+	createJob := view.JobViewCommand{}
 	if err := json.Unmarshal(reqBody, &createJob); err != nil {
 		return nil, err
 	}
