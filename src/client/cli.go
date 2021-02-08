@@ -22,17 +22,18 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 		return nil, nil, errors.New("invalid usage, must specify command")
 	}
 
-	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
+	flags := flag.NewFlagSet("client", flag.ContinueOnError)
+	flags.SetOutput(out)
+	flags.Usage = func() { printHelp(out, flags) }
 
 	url := flags.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
 
-	flags.Parse(args[1:])
+	if err := flags.Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			return nil, nil, nil
+		}
 
-	filteredArgs := flags.Args()
-
-	if filteredArgs[0] == "help" {
-		printHelp(out, flags)
-		return nil, nil, nil
+		return nil, nil, err
 	}
 
 	httpClient, err := NewHTTPClient(*url)
@@ -41,7 +42,7 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	}
 	api := APIClient{httpClient}
 
-	return &api, filteredArgs, nil
+	return &api, flags.Args(), nil
 }
 
 func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
@@ -127,16 +128,14 @@ func printHelp(out io.Writer, flags *flag.FlagSet) {
 	
 	command: list | show | stop | start | help
 	`)
-
-	flags.SetOutput(out)
 	flags.PrintDefaults()
 	fmt.Fprintf(out, `
 	Examples:
 	- client help
-	- client -c=http://user:pass@localhost:80 list
-	- client -c=http://user:pass@localhost:80 show d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:80 stop d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:80 start "ls -l /"
+	- client -c=http://user:pass@localhost:10000 list
+	- client -c=http://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:10000 start ls -l /
 	`)
 }
 
