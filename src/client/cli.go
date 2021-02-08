@@ -142,10 +142,10 @@ func printHelp(out io.Writer, flags *flag.FlagSet) {
 	fmt.Fprintf(out, `
 	Examples:
 	- client -h
-	- client -c=http://user:pass@localhost:10000 list
-	- client -c=http://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:10000 start ls -l /
+	- client -c=https://user:pass@localhost:10000 list
+	- client -c=https://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=https://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=https://user:pass@localhost:10000 start ls -l /
 	`)
 }
 

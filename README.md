@@ -132,8 +132,6 @@ These flags have defaults for running on localhost from the root folder.
 - `cert`: path to the server's public certificate for HTTPS
 - `privateKey`: path to the server's private key for HTTPS
 
-Set `cert` and `privateKey` to empty string to start server in regular HTTP mode.
-
 Example full command:
 ```shell
 $ go run src/cmd/server/main.go -cert=certs/server.crt -privateKey=certs/server.key
