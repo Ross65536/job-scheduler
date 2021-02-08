@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,12 +29,10 @@ func buildClientWithCA(caPath string) (*http.Client, error) {
 		return nil, err
 	}
 
-	caCertPool, err := x509.SystemCertPool()
-	if err != nil {
-		caCertPool = x509.NewCertPool()
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("Failed to parse CA certificate from file %s", caPath)
 	}
-
-	caCertPool.AppendCertsFromPEM(caCert)
 
 	client := &http.Client{
 		Transport: &http.Transport{
