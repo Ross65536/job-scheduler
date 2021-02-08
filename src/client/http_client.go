@@ -19,9 +19,6 @@ type HTTPClient struct {
 	apiUrl   url.URL
 }
 
-// it's thread-safe, recommended to reuse the client
-var httpClient = http.Client{}
-
 func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 	uri, err := url.ParseRequestURI(apiUrl)
 	if err != nil {
@@ -71,7 +68,7 @@ func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, p
 		return -1, nil, err
 	}
 
-	response, err := httpClient.Do(request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return -1, nil, err
 	}
