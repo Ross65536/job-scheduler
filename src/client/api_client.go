@@ -25,9 +25,9 @@ func buildResponseError(code int, body []byte) error {
 
 	if err == nil && parsed.Message != "" {
 		return fmt.Errorf("an error occurred (HTTP %d): %s", code, parsed.Message)
-	} else {
-		return fmt.Errorf("an error occurred (HTTP %d): %s", code, string(body))
 	}
+
+	return fmt.Errorf("an error occurred (HTTP %d): %s", code, string(body))
 }
 
 func (api *APIClient) ListJobs() ([]*core.JobViewPartial, error) {

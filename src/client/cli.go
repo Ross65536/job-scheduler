@@ -31,19 +31,20 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 		return nil, nil, errors.New("invalid usage, must specify command")
 	}
 
-	flags := flag.NewFlagSet("flags-1", flag.ContinueOnError)
+	flags := flag.NewFlagSet("client", flag.ContinueOnError)
+	flags.SetOutput(out)
+	flags.Usage = func() { printHelp(out, flags) }
 
 	url := flags.String("c", defaultURL, "the URI to the backend with credentials basic encoded")
 	// TODO make it default to empty string when releasing the client
 	certPath := flags.String("ca", defaultCAPath, "path to the CA public key used by server, set to empty string not to add")
 
-	flags.Parse(args[1:])
+	if err := flags.Parse(args[1:]); err != nil {
+		if err == flag.ErrHelp {
+			return nil, nil, nil
+		}
 
-	filteredArgs := flags.Args()
-
-	if filteredArgs[0] == "help" {
-		printHelp(out, flags)
-		return nil, nil, nil
+		return nil, nil, err
 	}
 
 	httpClient, err := buildHTTPClient(url, certPath)
@@ -52,7 +53,7 @@ func parseArgs(out io.Writer, args []string) (*APIClient, []string, error) {
 	}
 	api := APIClient{httpClient}
 
-	return &api, filteredArgs, nil
+	return &api, flags.Args(), nil
 }
 
 func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
@@ -64,8 +65,7 @@ func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ID\tSTATUS\tCOMMAND\tCREATED_AT\t")
 	for _, job := range jobs {
-		str := fmt.Sprintf("%s\t%s\t%s\t%s\t", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
-		fmt.Fprintln(w, str)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
 	}
 	w.Flush()
 
@@ -136,24 +136,23 @@ func startTask(out io.Writer, api *APIClient, commandRest []string) error {
 func printHelp(out io.Writer, flags *flag.FlagSet) {
 	fmt.Fprintf(out, `Format: client [flags] <command> [id/job]
 	
-	command: list | show | stop | start | help
-`)
-
-	flags.SetOutput(out)
+	command: list | show | stop | start
+	`)
 	flags.PrintDefaults()
 	fmt.Fprintf(out, `
 	Examples:
-	- client help
-	- client -c=http://user:pass@localhost:80 list
-	- client -c=http://user:pass@localhost:80 show d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:80 stop d99e3759-bcc8-4573-a267-88709761c67e
-	- client -c=http://user:pass@localhost:80 start "ls -l /"`)
+	- client -h
+	- client -c=http://user:pass@localhost:10000 list
+	- client -c=http://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
+	- client -c=http://user:pass@localhost:10000 start ls -l /
+	`)
 }
 
 func Start(out io.Writer, args []string) error {
 	api, filteredArgs, err := parseArgs(out, args)
 
-	if api == nil && filteredArgs == nil && err == nil {
+	if api == nil && filteredArgs == nil && err == nil { // on help message
 		return nil
 	}
 	if err != nil {

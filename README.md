@@ -72,7 +72,7 @@ The backend must be running in order to use the client.
 Examples:
 - Help
   ```shell
-  $ client help
+  $ client -h
   Format: client <command> [-c=<connection>] [id/command]
   ...
   ```

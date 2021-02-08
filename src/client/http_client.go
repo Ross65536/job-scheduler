@@ -79,7 +79,7 @@ func newHTTPClientCore(apiUrl string, client *http.Client) (*HTTPClient, error) 
 }
 
 func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
-	return newHTTPClientCore(apiUrl, &http.Client{})
+	return newHTTPClientCore(apiUrl, http.DefaultClient)
 }
 
 func NewHTTPClientWithCA(apiUrl, caPath string) (*HTTPClient, error) {
@@ -115,7 +115,10 @@ func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, p
 	}
 
 	// TODO add checks for Content-Type header, etc
-	resp, err := ReadCloseableBuffer(response.Body)
+	resp, err := ioutil.ReadAll(response.Body)
+	// close errors are ignored, since all data should be available
+	response.Body.Close()
+
 	return response.StatusCode, resp, err
 }
 
@@ -137,7 +140,7 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 	request.Header.Set("Host", c.apiUrl.Host)
 	request.Header.Set("Accept", jsonMime)
 	request.SetBasicAuth(c.username, c.token)
-	if requestBody != nil && len(requestBody) != 0 {
+	if len(requestBody) != 0 {
 		request.Header.Set("Content-Type", jsonMime+"; charset=utf-8")
 	}
 

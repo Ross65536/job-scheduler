@@ -3,7 +3,6 @@ package client_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -37,11 +36,13 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 		core.AssertEquals(t, user, expectedbasicUsername)
 		core.AssertEquals(t, pass, expectedBasicPassword)
 
-		if returnJson != nil {
-			w.Header().Set("Content-Type", jsonMime)
-			w.WriteHeader(returnStatusCode)
-			w.Write(returnJson)
+		if returnJson == nil {
+			return
 		}
+
+		w.Header().Set("Content-Type", jsonMime)
+		w.WriteHeader(returnStatusCode)
+		w.Write(returnJson)
 	})
 
 	server := httptest.NewServer(handler)
@@ -74,8 +75,7 @@ func TestCanShowJob(t *testing.T) {
 	err := client.Start(&buf, []string{"client", "-ca=", "-c=http://user:pass@" + uri.Host, "show", id})
 	core.AssertNotError(t, err)
 
-	output, err := ioutil.ReadAll(&buf)
-	core.AssertNotError(t, err)
+	output := buf.String()
 
 	expected := `ls -l /, RUNNING, 2020-03-02 04:04:04 +0000 UTC -> <nil>, exit_code: -
 
