@@ -54,8 +54,7 @@ func displayJobList(out io.Writer, jobs []*core.JobViewPartial) {
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "ID\tSTATUS\tCOMMAND\tCREATED_AT\t")
 	for _, job := range jobs {
-		str := fmt.Sprintf("%s\t%s\t%s\t%s\t", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
-		fmt.Fprintln(w, str)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", job.ID, job.Status, strings.Join(job.Command, " "), job.CreatedAt)
 	}
 	w.Flush()
 
