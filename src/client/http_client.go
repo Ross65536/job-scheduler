@@ -56,9 +56,9 @@ func newHTTPClientCore(apiUrl string, client *http.Client) (*HTTPClient, error) 
 		return nil, errors.New("uri must be absolute")
 	}
 
-	// use https when supported
+	// TODO remove plain http support once tests connect with HTTPS
 	if uri.Scheme != "http" && uri.Scheme != "https" {
-		return nil, errors.New("invalid url scheme")
+		return nil, errors.New("invalid url scheme, must be HTTPS")
 	}
 
 	if uri.User == nil {

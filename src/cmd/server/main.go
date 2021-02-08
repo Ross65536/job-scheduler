@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"log"
 	"os"
@@ -14,18 +13,14 @@ const (
 	defaultCertificatePath = "certs/server.crt"
 )
 
-func parsePort() (int, string, string, error) {
+func parseFlags() (listenPort int, certificatePath string, privateKeyPath string) {
 	port := flag.Int("p", 10000, "port to listen on")
 	certificate := flag.String("cert", defaultCertificatePath, "path to the server's public certificate")
 	privateKey := flag.String("privateKey", defaultPrivateKeyPath, "path to the server's private key, matching the certificate")
 
 	flag.Parse()
 
-	if *port < 0 || *port > 65535 {
-		return 0, "", "", errors.New("invalid port value")
-	}
-
-	return *port, *certificate, *privateKey, nil
+	return *port, *certificate, *privateKey
 }
 
 func start(server *backend.Server, port int, certificatePath, privateKeyPath string) error {
@@ -47,9 +42,9 @@ func main() {
 		log.Fatalf("Failed to create server %s", err)
 	}
 
-	port, certificatePath, privateKeyPath, err := parsePort()
-	if err != nil {
-		log.Fatalf("Failed to parse port: %s", err)
+	port, certificatePath, privateKeyPath := parseFlags()
+	if port < 0 || port > 65535 {
+		log.Fatalf("invalid port value")
 	}
 
 	log.Printf("Starting server on :%d", port)
