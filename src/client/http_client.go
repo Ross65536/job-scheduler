@@ -98,7 +98,7 @@ func (c *HTTPClient) buildRequest(requestMethod string, pathSegments []string, r
 	request.Header.Set("Host", c.apiUrl.Host)
 	request.Header.Set("Accept", jsonMime)
 	request.SetBasicAuth(c.username, c.token)
-	if requestBody != nil && len(requestBody) != 0 {
+	if len(requestBody) != 0 {
 		request.Header.Set("Content-Type", jsonMime+"; charset=utf-8")
 	}
 
