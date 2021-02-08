@@ -37,11 +37,13 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 		core.AssertEquals(t, user, expectedbasicUsername)
 		core.AssertEquals(t, pass, expectedBasicPassword)
 
-		if returnJson != nil {
-			w.Header().Set("Content-Type", jsonMime)
-			w.WriteHeader(returnStatusCode)
-			w.Write(returnJson)
+		if returnJson == nil {
+			return
 		}
+
+		w.Header().Set("Content-Type", jsonMime)
+		w.WriteHeader(returnStatusCode)
+		w.Write(returnJson)
 	})
 
 	server := httptest.NewServer(handler)
