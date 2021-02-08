@@ -142,7 +142,7 @@ func printHelp(out io.Writer, flags *flag.FlagSet) {
 func Start(out io.Writer, args []string) error {
 	api, filteredArgs, err := parseArgs(out, args)
 
-	if api == nil && filteredArgs == nil && err == nil {
+	if api == nil && filteredArgs == nil && err == nil { // on help message
 		return nil
 	}
 	if err != nil {
