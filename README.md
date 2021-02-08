@@ -61,7 +61,7 @@ The connection flag used in examples will be defined as for example `CON=-c=http
 Examples:
 - Help
   ```shell
-  $ client help
+  $ client -h
   Format: client <command> [-c=<connection>] [id/command]
   ...
   ```
