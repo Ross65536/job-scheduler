@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -76,7 +77,10 @@ func (c *HTTPClient) makeJSONRequest(requestMethod string, requestBody []byte, p
 	}
 
 	// TODO add checks for Content-Type header, etc
-	resp, err := ReadCloseableBuffer(response.Body)
+	resp, err := ioutil.ReadAll(response.Body)
+	// close errors are ignored, since all data should be available
+	response.Body.Close()
+
 	return response.StatusCode, resp, err
 }
 
