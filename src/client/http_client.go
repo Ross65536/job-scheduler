@@ -31,7 +31,7 @@ func NewHTTPClient(apiUrl string) (*HTTPClient, error) {
 		return nil, errors.New("uri must be absolute")
 	}
 
-	// use https when supported
+	// TODO: use https when supported
 	if uri.Scheme != "http" {
 		return nil, errors.New("invalid url scheme")
 	}

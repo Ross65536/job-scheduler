@@ -3,7 +3,6 @@ package client_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -76,8 +75,7 @@ func TestCanShowJob(t *testing.T) {
 	err := client.Start(&buf, []string{"client", "-c=http://user:pass@" + uri.Host, "show", id})
 	core.AssertNotError(t, err)
 
-	output, err := ioutil.ReadAll(&buf)
-	core.AssertNotError(t, err)
+	output := buf.String()
 
 	expected := `ls -l /, RUNNING, 2020-03-02 04:04:04 +0000 UTC -> <nil>, exit_code: -
 
