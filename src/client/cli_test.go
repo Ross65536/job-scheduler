@@ -2,6 +2,7 @@ package client_test
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +26,14 @@ func encodeModel(t *testing.T, model interface{}) []byte {
 	return returnJson
 }
 
+func TestMain(m *testing.M) {
+	// ignore TLS verification from client
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	code := m.Run()
+	os.Exit(code)
+}
+
 func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expectedMethod, expectedUriPath, expectedbasicUsername, expectedBasicPassword string) (*httptest.Server, *url.URL) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +54,7 @@ func setupTestServer(t *testing.T, returnStatusCode int, returnJson []byte, expe
 		w.Write(returnJson)
 	})
 
-	server := httptest.NewServer(handler)
+	server := httptest.NewTLSServer(handler)
 
 	uri, err := url.ParseRequestURI(server.URL)
 	core.AssertNotError(t, err)
@@ -72,7 +81,7 @@ func TestCanShowJob(t *testing.T) {
 	defer server.Close()
 
 	buf := bytes.Buffer{}
-	err := client.Start(&buf, []string{"client", "-ca=", "-c=http://user:pass@" + uri.Host, "show", id})
+	err := client.Start(&buf, []string{"client", "-ca=", "-c=https://user:pass@" + uri.Host, "show", id})
 	core.AssertNotError(t, err)
 
 	output := buf.String()
@@ -98,7 +107,7 @@ func TestServerError(t *testing.T) {
 	server, uri := setupTestServer(t, 401, encodeModel(t, returnError), "GET", "/api/jobs", "user", "pass")
 	defer server.Close()
 
-	err := client.Start(os.Stdout, []string{"client", "-ca=", "-c=http://user:pass@" + uri.Host, "list"})
+	err := client.Start(os.Stdout, []string{"client", "-ca=", "-c=https://user:pass@" + uri.Host, "list"})
 	core.AssertNotEquals(t, err, nil)
 
 	core.AssertEquals(t, err.Error(), "an error occurred (HTTP 401): "+returnError.Message)
