@@ -27,6 +27,15 @@ $ go run src/cmd/server/main.go
 
 # on another terminal, send client command
 $ go run src/cmd/client/main.go start ls -l /
+
+# process with non zero exit code 
+$ go run src/cmd/client/main.go start $(pwd)/scripts/bad_exit.sh 1
+
+# stopping long running process
+$ go run src/cmd/client/main.go start $(pwd)/scripts/long_process.sh 30
+ID: 218fd3b8-201b-47ef-a3c0-37aba0403263 # ID returned can be different
+
+$ go run src/cmd/client/main.go stop 218fd3b8-201b-47ef-a3c0-37aba0403263 # replace ID with result from previous step
 ```
 
 ## Instructions
