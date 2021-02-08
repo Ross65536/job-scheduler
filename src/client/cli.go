@@ -135,7 +135,7 @@ func printHelp(out io.Writer, flags *flag.FlagSet) {
 	- client -c=http://user:pass@localhost:10000 show d99e3759-bcc8-4573-a267-88709761c67e
 	- client -c=http://user:pass@localhost:10000 stop d99e3759-bcc8-4573-a267-88709761c67e
 	- client -c=http://user:pass@localhost:10000 start ls -l /
-	`)
+`)
 }
 
 func Start(out io.Writer, args []string) error {
