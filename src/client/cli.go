@@ -125,7 +125,7 @@ func startTask(out io.Writer, api *APIClient, commandRest []string) error {
 func printHelp(out io.Writer, flags *flag.FlagSet) {
 	fmt.Fprintf(out, `Format: client [flags] <command> [id/job]
 	
-	command: list | show | stop | start | help
+	command: list | show | stop | start
 	`)
 	flags.PrintDefaults()
 	fmt.Fprintf(out, `
