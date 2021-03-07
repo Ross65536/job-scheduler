@@ -1,4 +1,4 @@
-module github.com/ros-k/job-manager/server
+module github.com/Ross65536/job-scheduler/server
 
 go 1.15
 

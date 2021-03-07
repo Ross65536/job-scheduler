@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ros-k/job-manager/src/backend"
+	"github.com/Ross65536/job-scheduler/src/backend"
 )
 
 const (

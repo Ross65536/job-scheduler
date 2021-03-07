@@ -42,7 +42,7 @@ $ go run src/cmd/client/main.go stop 218fd3b8-201b-47ef-a3c0-37aba0403263 # repl
 
 You need to clone the repository into your `GOPATH` env var folder (which needs to be set).
 
-If your `GOPATH` is `~/go` you need to clone into `~/go/src/github.com/ros-k/job-manager`
+If your `GOPATH` is `~/go` you need to clone into `~/go/src/github.com/Ross65536/job-scheduler`
 
 Assuming you are in the root folder:
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ros-k/job-manager/src/core/view"
+	"github.com/Ross65536/job-scheduler/src/core/view"
 )
 
 type APIClient struct {

@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ros-k/job-manager/src/client"
+	"github.com/Ross65536/job-scheduler/src/client"
 )
 
 func main() {

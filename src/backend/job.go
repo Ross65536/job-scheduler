@@ -6,8 +6,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Ross65536/job-scheduler/src/core/view"
 	"github.com/google/uuid"
-	"github.com/ros-k/job-manager/src/core/view"
 )
 
 type JobStatus string

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ros-k/job-manager/src/backend"
-	"github.com/ros-k/job-manager/src/core/testutil"
+	"github.com/Ross65536/job-scheduler/src/backend"
+	"github.com/Ross65536/job-scheduler/src/core/testutil"
 )
 
 type httpBasic struct {

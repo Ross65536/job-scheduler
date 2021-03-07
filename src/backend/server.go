@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Ross65536/job-scheduler/src/core/view"
 	"github.com/gorilla/mux"
-	"github.com/ros-k/job-manager/src/core/view"
 )
 
 type Server struct {

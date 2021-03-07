@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ros-k/job-manager/src/client"
-	"github.com/ros-k/job-manager/src/core/testutil"
-	"github.com/ros-k/job-manager/src/core/view"
+	"github.com/Ross65536/job-scheduler/src/client"
+	"github.com/Ross65536/job-scheduler/src/core/testutil"
+	"github.com/Ross65536/job-scheduler/src/core/view"
 )
 
 const (
