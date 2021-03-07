@@ -17,7 +17,7 @@ Quick start:
 
 # must be in the root folder for the defaults
 $ pwd 
-~/go/src/github.com/ros-k/job-manager
+~/go/src/github.com/Ross65536/job-scheduler
 
 # setup
 $ go get ./...
