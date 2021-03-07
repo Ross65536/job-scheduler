@@ -158,6 +158,8 @@ head -c 32 /dev/urandom | base64
 
 #### Generating certificates
 
+> There are already some pre-generated keys in teh `certs` folder useful for trying out the backend + client
+
 Assuming you are in the `certs` folder.
 
 > In answer to the question `Common Name (eg, fully qualified host name)` below you should set `localhost` (or your real domain)
